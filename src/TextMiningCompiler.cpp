@@ -8,21 +8,8 @@ struct TrieNode{
     struct TrieNode *parent;
 };
 
-int main()
-{
-    std::ifstream inFile;
-    inFile.open("../../out.txt");
-    if (!inFile){
-        std::cerr << "Unable to read the file words.txt";
-        exit(1);
-    }
-    std::string line;
-    int nb;
+struct TrieNode *initializeFirstNode(std::string first_val, int first_freq){
     // PROCESS PREMIERE LIGNE
-    std::string first_val;
-    int first_freq;
-    inFile >> first_val >> first_freq;
-
     // CREATION PREMIER NODE
     struct TrieNode *old_node = new TrieNode;
     old_node->value = " ";
@@ -43,15 +30,43 @@ int main()
     }
     old_node->freq = first_freq;
     std::cout << old_node->parent->value << " " << old_node->freq;
+    return old_node;
+
+}
+int main()
+{
+    std::ifstream inFile;
+    inFile.open("../../out.txt");
+    if (!inFile){
+        std::cerr << "Unable to read the file words.txt";
+        exit(1);
+    }
+    std::string line;
+    int nb;
+    inFile >> line >> nb;
+    struct TrieNode *old_node = initializeFirstNode(line, nb);
 
     // CREATION TOUT LES AUTRES NODES
-    std::string previous_val;
+
     while (inFile >> line >> nb){
         // GARDER ANCIEN MOT
-        // COMPARE AVEC L'ANCIEN MOT 
+        // COMPARE AVEC L'ANCIEN MOT
+        while (line.size() < old_node->value.size()){
+            old_node = old_node->parent;
+            // std::cout << "\n"<<line << " " << old_node->value << "\n";
+        }
+        if (line.compare(old_node->value) == 0){
+            old_node->freq = nb;
+            continue;
+        }
+        while (std::mismatch(old_node->value.begin(), old_node->value.end(), line.begin()).first != old_node->value.end()){
+            old_node = old_node->parent;
+        }
+
         // TANT QUE LES CARACTERES SONT DIFFERENT OU DE PLUS PETITE TAILLE REMONTE AU PARENT
         // QUAND MEME MOT AJOUTER FREQ
         // QUAND MEME LETTRE ALORS CREER FILS DROIT PUIS DESCENDRE
+        // ATTENTION TESTER SI LE FILS EXISTE DEJA
     }
     inFile.close();
 }
