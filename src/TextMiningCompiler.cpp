@@ -4,25 +4,25 @@
 #include <string>
 #include <algorithm>
 using namespace std;
+#include <thread>
 
 
 struct TrieNode{
-    string value;
+    char value;
     int freq;
-    vector<struct TrieNode*> childrens = {};
-    struct TrieNode *parent;
+    // CHANGE SHARED_PTR
+    vector<std::shared_ptr<struct TrieNode>> childrens = {};
+    shared_ptr<struct TrieNode> parent;
 };
 
-struct TrieNode *initializeFirstNode(string first_val, int first_freq){
+shared_ptr<struct TrieNode> initializeFirstNode(shared_ptr<struct TrieNode> root, string first_val, int first_freq){
     // PROCESS PREMIERE LIGNE
     // CREATION PREMIER NODE
-    struct TrieNode *old_node = new TrieNode;
-    old_node->value = "";
-    old_node->freq = 0;
-    old_node->parent = nullptr;
+    shared_ptr<struct TrieNode> old_node = root;
     for (int i = 0; i<first_val.size(); i++){
-        struct TrieNode *node = new TrieNode;
-        node->value = first_val.substr(0,i+1);
+        // MAKE_SHARED
+        shared_ptr<struct TrieNode> node = make_shared<struct TrieNode>();
+        node->value = first_val[i];
         cout << node->value << "\n";
         node->freq = 0;
         node->parent = old_node;
@@ -30,7 +30,7 @@ struct TrieNode *initializeFirstNode(string first_val, int first_freq){
         old_node = node;
     }
     old_node->freq = first_freq;
-    cout << old_node->parent->value << " " << old_node->freq;
+    std::cout << old_node->value << " " << old_node->freq;
     return old_node;
 
 }
@@ -48,17 +48,40 @@ void sort(string path) {
     }
     sort(words.begin(), words.end());
     
-    ofstream outFile("./out.txt");
+    ofstream outFile("out.txt");
     for (size_t i = 0; i < words.size(); i++) {
         outFile << words[i] << '\n';
     }
 }
 
+unsigned int write_node(shared_ptr<struct TrieNode> root, ofstream& outFile, unsigned int curr_offset){ // seekp(offset) | seekp(0,std::ios::end())
+    outFile.seekp(curr_offset);
+    int size = root->childrens.size();
+    outFile.write((char*)&size, sizeof(int));
+
+    outFile.write((char*)&root->freq, sizeof(int));
+
+    outFile.write((char*)&root->value, sizeof(char));
+
+    unsigned int offset_sons = curr_offset + sizeof(int) + sizeof(int) + sizeof(char);
+    unsigned int next_offset = offset_sons + size * sizeof(unsigned int);
+
+    std::vector<unsigned  int> offset_for_nodes(size);
+
+    for (int i = 0; i < root->childrens.size(); i++){
+        offset_for_nodes[i] = next_offset;
+        next_offset = write_node(root->childrens.at(i), outFile, next_offset);
+    }
+
+    outFile.seekp(offset_sons);
+    outFile.write((char *)offset_for_nodes.data(), offset_for_nodes.size() * sizeof(unsigned int));
+    return next_offset;
+}
 int main()
 {
-    sort("./words.txt");
+    sort("../words.txt");
     ifstream inFile;
-    inFile.open("./out.txt");
+    inFile.open("out.txt");
     if (!inFile){
         cerr << "Unable to read the file out.txt";
         exit(1);
@@ -66,54 +89,63 @@ int main()
     string line;
     int nb;
     inFile >> line >> nb;
-    struct TrieNode *old_node = initializeFirstNode(line, nb);
+    shared_ptr<struct TrieNode> root = make_shared<struct TrieNode>();
+    root->value = '\0';
+    root->freq = 0;
+    root->parent = nullptr;
+    std::string previous_val = line;
+    shared_ptr<struct TrieNode> old_node = initializeFirstNode(root, line, nb);
 
     // CREATION TOUT LES AUTRES NODES
 
     while (inFile >> line >> nb){
         // GARDER ANCIEN MOT
         // COMPARE AVEC L'ANCIEN MOT
-        while (line.size() < old_node->value.size()){
+        std::string previous_subval = previous_val;
+        while (line.size() < previous_subval.size()){
             old_node = old_node->parent;
+            previous_subval = previous_subval.substr(0,previous_subval.size()-1);
             // cout << "\n"<<line << " " << old_node->value << "\n";
         }
-        if (line.compare(old_node->value) == 0){
+        if (line.compare(previous_subval) == 0){
             old_node->freq = nb;
             continue;
         }
-        while (old_node->parent != nullptr && mismatch(old_node->value.begin(), old_node->value.end(), line.begin()).first != old_node->value.end()){
+        while (old_node->parent != nullptr && mismatch(previous_subval.begin(), previous_subval.end(), line.begin()).first != previous_subval.end()){
             old_node = old_node->parent;
+            previous_subval = previous_subval.substr(0,previous_subval.size()-1);
         }
         // CHECK IF EXIST ALREADY
         int found = 1;
         while(found == 1){
             found = 0;
             for(int k = 0; k < old_node->childrens.size(); k++){
-                if (mismatch(old_node->childrens.at(k)->value.begin(), old_node->childrens.at(k)->value.end(), line.begin()).first == old_node->childrens.at(k)->value.end()){
+                if (mismatch((previous_subval + old_node->childrens.at(k)->value).begin(), (previous_subval + old_node->childrens.at(k)->value).end(), line.begin()).first == (previous_subval + old_node->childrens.at(k)->value).end()){
                     old_node = old_node->childrens.at(k);
+                    previous_subval = previous_subval + old_node->value;
                     found = 1;
                 }
 
             }
         }
-        if (line.compare(old_node->value) == 0){
+        if (line.compare(previous_subval) == 0){
             old_node-> freq = nb;
             continue;
         }
         // CREER NOUVEAU FILS MAIS ATTENTION PAS ECRASER LES AUTRES
-        int length_word = old_node->value.size();
+        int length_word = previous_subval.size();
         while (length_word < line.size())
         {
-            struct TrieNode *son = new TrieNode;
+            shared_ptr<struct TrieNode> son = make_shared<struct TrieNode>();
             son->parent = old_node;
-            son->value = old_node->value + line[length_word];
+            son->value = line[length_word];
             son->freq = 0;
             old_node->childrens.push_back(son);
             old_node = son;
             length_word +=1;
         }
         old_node->freq = nb;
-        // TODO ATTENTION CAS REVIENS A LA RACINE PAS GERER !!
+        previous_val = line;
 
         // TANT QUE LES CARACTERES SONT DIFFERENT OU DE PLUS PETITE TAILLE REMONTE AU PARENT
         // QUAND MEME MOT AJOUTER FREQ
@@ -122,5 +154,10 @@ int main()
         //cout << old_node->value << " "<< old_node->freq << "\n";
     }
     inFile.close();
+    std::ofstream outFile;
+    outFile.open("dict.bin");
+    //outFile.write("Salut",4);
+    write_node(root, outFile, 0);
+    outFile.close();
     // A ECRIRE BINAIRE
 }
