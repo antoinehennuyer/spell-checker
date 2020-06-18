@@ -32,7 +32,43 @@ shared_ptr<struct TrieNode> initializeFirstNode(shared_ptr<struct TrieNode> root
     old_node->freq = first_freq;
     std::cout << old_node->value << " " << old_node->freq;
     return old_node;
+}
 
+vector<string> browse(string path, string word, shared_ptr<struct TrieNode> tree, int nb_error, int i, vector<string> words) {
+    if (word[i] == '\0') {
+        words.push_back(path + '\0');
+        printf("Word : %s \n", path.c_str());
+        return words;
+    }
+    else {
+        for (unsigned j = 0; j < tree->childrens.size(); j++) {
+            /*printf("%s", "\n");
+            printf("children value : %c", tree->childrens[j]->value);
+            printf("%s", "\n");
+            printf("i : %d", i);
+            printf("%s", "\n");
+            printf("j : %d", j);
+            printf("%s", "\n");*/
+            string new_path = path;
+            new_path.push_back(tree->childrens[j]->value);
+            //printf("Path : %s", new_path.c_str());
+            if (tree->childrens[j]->value == word[i]) {
+                words = browse(new_path, word, tree->childrens[j], nb_error, i + 1, words);
+            } else {
+                words = browse(new_path, word, tree->childrens[j], nb_error + 1, i + 1, words);
+            }
+        }
+        return words;
+        /*for (auto it=tree->childrens.begin(); it !=tree->childrens.end(); it++) {
+            printf("%s", *it[std::money_base::value]);
+            path.append(*it->value);
+            if (*it->value == word[i]) {
+                browse(path, word, *it, dist, nb_error, i + 1, words);
+            } else {
+                browse(path, word, *it, dist, nb_error + 1, i + 1, words);
+            }
+        }*/
+    }
 }
 
 void sort(string path) {
@@ -77,9 +113,10 @@ unsigned int write_node(shared_ptr<struct TrieNode> root, ofstream& outFile, uns
     outFile.write((char *)offset_for_nodes.data(), offset_for_nodes.size() * sizeof(unsigned int));
     return next_offset;
 }
+
 int main()
 {
-    sort("../words.txt");
+    sort("words.txt");
     ifstream inFile;
     inFile.open("out.txt");
     if (!inFile){
@@ -97,7 +134,6 @@ int main()
     shared_ptr<struct TrieNode> old_node = initializeFirstNode(root, line, nb);
 
     // CREATION TOUT LES AUTRES NODES
-
     while (inFile >> line >> nb){
         // GARDER ANCIEN MOT
         // COMPARE AVEC L'ANCIEN MOT
@@ -156,8 +192,26 @@ int main()
     inFile.close();
     std::ofstream outFile;
     outFile.open("dict.bin");
+    printf("%s", "\n");
+    printf("%s", "début");
+    printf("%s", "\n");
+    
     //outFile.write("Salut",4);
-    write_node(root, outFile, 0);
+    printf("\n%s\n", "dist 0 :");
+    vector<string> words(1000);
+    browse("", "n936", root, 0, 0, 0, words);
+    printf("\n%s\n", "dist 0 :");
+    vector<string> words2(1000);
+    browse("", "n936", root, 1, 0, 0, words2);
+    printf("\n%s\n", "dist 0 :");
+    vector<string> words3(1000);
+    browse("", "n936", root, 2, 0, 0, words3);
+    
+    printf("%s", "\n");
+    printf("%s", "fin");
+    printf("%s", "\n");
+
+    //write_node(root, outFile, 0);
     outFile.close();
     // A ECRIRE BINAIRE
 }
