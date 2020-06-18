@@ -46,16 +46,8 @@ vector<string> browse(string path, string word, shared_ptr<struct TrieNode> tree
     }
     else {
         for (unsigned j = 0; j < tree->childrens.size(); j++) {
-            /*printf("%s", "\n");
-            printf("children value : %c", tree->childrens[j]->value);
-            printf("%s", "\n");
-            printf("i : %d", i);
-            printf("%s", "\n");
-            printf("j : %d", j);
-            printf("%s", "\n");*/
             string new_path = path;
             new_path.push_back(tree->childrens[j]->value);
-            //printf("Path : %s", new_path.c_str());
             if (tree->childrens[j]->value == word[i]) {
                 words = browse(new_path, word, tree->childrens[j], dist, nb_error, i + 1, words);
             } else {
@@ -63,16 +55,24 @@ vector<string> browse(string path, string word, shared_ptr<struct TrieNode> tree
             }
         }
         return words;
-        /*for (auto it=tree->childrens.begin(); it !=tree->childrens.end(); it++) {
-            printf("%s", *it[std::money_base::value]);
-            path.append(*it->value);
-            if (*it->value == word[i]) {
-                browse(path, word, *it, dist, nb_error, i + 1, words);
-            } else {
-                browse(path, word, *it, dist, nb_error + 1, i + 1, words);
-            }
-        }*/
     }
+}
+
+void test_dist(shared_ptr<struct TrieNode> root){
+    printf("\n%s\n", "début");
+    
+    //outFile.write("Salut",4);
+    printf("\n%s\n", "dist 0 :");
+    vector<string> words(1000);
+    browse("", "n936", root, 0, 0, 0, words);
+    printf("\n%s\n", "dist 0 :");
+    vector<string> words2(1000);
+    browse("", "n936", root, 1, 0, 0, words2);
+    printf("\n%s\n", "dist 0 :");
+    vector<string> words3(1000);
+    browse("", "n936", root, 2, 0, 0, words3);
+    
+    printf("\n%s\n", "fin");
 }
 
 void sort(string path) {
@@ -196,24 +196,8 @@ int main()
     inFile.close();
     std::ofstream outFile;
     outFile.open("dict.bin");
-    printf("%s", "\n");
-    printf("%s", "début");
-    printf("%s", "\n");
     
-    //outFile.write("Salut",4);
-    printf("\n%s\n", "dist 0 :");
-    vector<string> words(1000);
-    browse("", "n936", root, 0, 0, 0, words);
-    printf("\n%s\n", "dist 0 :");
-    vector<string> words2(1000);
-    browse("", "n936", root, 1, 0, 0, words2);
-    printf("\n%s\n", "dist 0 :");
-    vector<string> words3(1000);
-    browse("", "n936", root, 2, 0, 0, words3);
-    
-    printf("%s", "\n");
-    printf("%s", "fin");
-    printf("%s", "\n");
+    test_dist(root);
 
     //write_node(root, outFile, 0);
     outFile.close();
