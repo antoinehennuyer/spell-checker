@@ -34,7 +34,11 @@ shared_ptr<struct TrieNode> initializeFirstNode(shared_ptr<struct TrieNode> root
     return old_node;
 }
 
-vector<string> browse(string path, string word, shared_ptr<struct TrieNode> tree, int nb_error, int i, vector<string> words) {
+vector<string> browse(string path, string word, shared_ptr<struct TrieNode> tree, int dist, int nb_error, int i, vector<string> words) {
+    if (nb_error > dist){
+        vector<string> empty(0);
+        return empty;
+    }
     if (word[i] == '\0') {
         words.push_back(path + '\0');
         printf("Word : %s \n", path.c_str());
@@ -53,9 +57,9 @@ vector<string> browse(string path, string word, shared_ptr<struct TrieNode> tree
             new_path.push_back(tree->childrens[j]->value);
             //printf("Path : %s", new_path.c_str());
             if (tree->childrens[j]->value == word[i]) {
-                words = browse(new_path, word, tree->childrens[j], nb_error, i + 1, words);
+                words = browse(new_path, word, tree->childrens[j], dist, nb_error, i + 1, words);
             } else {
-                words = browse(new_path, word, tree->childrens[j], nb_error + 1, i + 1, words);
+                words = browse(new_path, word, tree->childrens[j], dist, nb_error + 1, i + 1, words);
             }
         }
         return words;
