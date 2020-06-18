@@ -58,19 +58,18 @@ vector<string> browse(string path, string word, shared_ptr<struct TrieNode> tree
     }
 }
 
-void test_dist(shared_ptr<struct TrieNode> root){
+void test_dist(shared_ptr<struct TrieNode> root, string word){
     printf("\n%s\n", "début");
     
-    //outFile.write("Salut",4);
     printf("\n%s\n", "dist 0 :");
     vector<string> words(1000);
-    browse("", "n936", root, 0, 0, 0, words);
-    printf("\n%s\n", "dist 0 :");
+    browse("", word, root, 0, 0, 0, words);
+    printf("\n%s\n", "dist 1 :");
     vector<string> words2(1000);
-    browse("", "n936", root, 1, 0, 0, words2);
-    printf("\n%s\n", "dist 0 :");
+    browse("", word, root, 1, 0, 0, words2);
+    printf("\n%s\n", "dist 2 :");
     vector<string> words3(1000);
-    browse("", "n936", root, 2, 0, 0, words3);
+    browse("", word, root, 2, 0, 0, words3);
     
     printf("\n%s\n", "fin");
 }
@@ -197,7 +196,7 @@ int main()
     std::ofstream outFile;
     outFile.open("dict.bin");
     
-    test_dist(root);
+    test_dist(root, "n936");
 
     //write_node(root, outFile, 0);
     outFile.close();
