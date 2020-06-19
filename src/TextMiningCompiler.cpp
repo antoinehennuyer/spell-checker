@@ -31,7 +31,46 @@ shared_ptr<struct TrieNode> initializeFirstNode(shared_ptr<struct TrieNode> root
     old_node->freq = first_freq;
     //std::cout << old_node->value << " " << old_node->freq;
     return old_node;
+}
 
+vector<string> browse(string path, string word, shared_ptr<struct TrieNode> tree, int dist, int nb_error, int i, vector<string> words) {
+    if (nb_error > dist){
+        vector<string> empty(0);
+        return empty;
+    }
+    if (word[i] == '\0') {
+        words.push_back(path + '\0');
+        printf("Word : %s \n", path.c_str());
+        return words;
+    }
+    else {
+        for (unsigned j = 0; j < tree->childrens.size(); j++) {
+            string new_path = path;
+            new_path.push_back(tree->childrens[j]->value);
+            if (tree->childrens[j]->value == word[i]) {
+                words = browse(new_path, word, tree->childrens[j], dist, nb_error, i + 1, words);
+            } else {
+                words = browse(new_path, word, tree->childrens[j], dist, nb_error + 1, i + 1, words);
+            }
+        }
+        return words;
+    }
+}
+
+void test_dist(shared_ptr<struct TrieNode> root, string word){
+    printf("\n%s\n", "début");
+    
+    printf("\n%s\n", "dist 0 :");
+    vector<string> words(1000);
+    browse("", word, root, 0, 0, 0, words);
+    printf("\n%s\n", "dist 1 :");
+    vector<string> words2(1000);
+    browse("", word, root, 1, 0, 0, words2);
+    printf("\n%s\n", "dist 2 :");
+    vector<string> words3(1000);
+    browse("", word, root, 2, 0, 0, words3);
+    
+    printf("\n%s\n", "fin");
 }
 
 void sort(string path) {
@@ -56,6 +95,15 @@ void sort(string path) {
     outFile.close();
 }
 
+void write_to_file(shared_ptr<struct TrieNode> root, ofstream& outFile){
+    int size = root->childrens.size();
+    outFile.write(reinterpret_cast<char*>(&root->value), sizeof(char));
+    outFile.write(reinterpret_cast<char *>(&root->freq), sizeof(int));
+    outFile.write(reinterpret_cast<char *>(&size), sizeof(int));
+    for(int i = 0; i < size; i++){
+        write_to_file(root->childrens.at(i), outFile);
+    }
+}
 unsigned int write_node(shared_ptr<struct TrieNode> root, ofstream& outFile, unsigned int curr_offset){ // seekp(offset) | seekp(0,std::ios::end())
     outFile.seekp(curr_offset);
     int size = root->childrens.size();
@@ -79,9 +127,10 @@ unsigned int write_node(shared_ptr<struct TrieNode> root, ofstream& outFile, uns
     outFile.write((char *)offset_for_nodes.data(), offset_for_nodes.size() * sizeof(unsigned int));
     return next_offset;
 }
+
 int main()
 {
-    sort("../words.txt");
+    sort("words.txt");
     ifstream inFile;
     inFile.open("out.txt");
     if (!inFile){
@@ -156,7 +205,10 @@ int main()
     }
     inFile.close();
     std::ofstream outFile;
-    outFile.open("dict.bin", std::ofstream::binary);
+    outFile.open("dict.bin");
+    //test_dist(root, "n936");
     //write_node(root, outFile, 0);
+    write_to_file(root, outFile);
     outFile.close();
+    // A ECRIRE BINAIRE
 }
