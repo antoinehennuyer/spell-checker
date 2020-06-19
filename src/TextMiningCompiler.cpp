@@ -104,6 +104,22 @@ void write_to_file(shared_ptr<struct TrieNode> root, ofstream& outFile){
         write_to_file(root->childrens.at(i), outFile);
     }
 }
+
+shared_ptr<struct TrieNode> read_from_file(ifstream& inFile) {
+    int size;
+    char value;
+    shared_ptr<struct TrieNode> root = make_shared<struct TrieNode>();
+    
+    inFile.read(reinterpret_cast<char*>(&root->value), sizeof(char));
+    inFile.read(reinterpret_cast<char *>(&root->freq), sizeof(int));
+    inFile.read(reinterpret_cast<char *>(&size), sizeof(int));
+    
+    for (int i = 0; i < size; i++) {
+        root->childrens.push_back(read_from_file(inFile));
+    }
+    return root;
+}
+
 unsigned int write_node(shared_ptr<struct TrieNode> root, ofstream& outFile, unsigned int curr_offset){ // seekp(offset) | seekp(0,std::ios::end())
     outFile.seekp(curr_offset);
     int size = root->childrens.size();
@@ -212,3 +228,17 @@ int main()
     outFile.close();
     // A ECRIRE BINAIRE
 }
+
+
+/*int main() {
+    string path = "dict.bin";
+    ifstream inFile;
+    inFile.open(path);
+    if (!inFile){
+        cerr << "Unable to read the file " + path;
+        exit(1);
+    }
+    shared_ptr<struct TrieNode> tree = read_from_file(inFile);
+    test_dist(tree, "n936");
+    return 1;
+}*/
