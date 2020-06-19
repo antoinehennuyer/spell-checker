@@ -3,6 +3,11 @@
 #include <unistd.h>
 #include <fstream>
 #include <vector>
+#include "rapidjson/document.h"
+#include "rapidjson/writer.h"
+#include "rapidjson/stringbuffer.h"
+
+using namespace rapidjson;
 
 using namespace std;
 
@@ -13,14 +18,32 @@ struct TrieNode{
     shared_ptr<struct TrieNode> parent;
 };
 
-vector<string> browse(string path, string word, shared_ptr<struct TrieNode> tree, int dist, int nb_error, int i, vector<string> words) {
+string browse(string path, string word, shared_ptr<struct TrieNode> tree, int dist, int nb_error, int i, string words) {
     if (nb_error > dist){
-        vector<string> empty(0);
-        return empty;
+        return words;
     }
     if (word[i] == '\0') {
-        words.push_back(path + '\0');
-        printf("Word : %s \n", path.c_str());
+        Document d;
+        Document::AllocatorType& alloc = d.GetAllocator();
+
+        d.SetObject();
+
+        Value textWord;
+        textWord.SetString(path.c_str(), alloc);
+        Value textFreq;
+        textFreq.SetInt(tree->freq);
+        Value textDist;
+        textDist.SetInt(nb_error);
+        
+        d.AddMember("word", textWord, alloc);
+        d.AddMember("freq", textFreq, alloc);
+        d.AddMember("distance", textDist, alloc);
+                
+        StringBuffer buffer;
+        Writer<StringBuffer> writer(buffer);
+        d.Accept(writer);
+
+        words.append(buffer.GetString());
         return words;
     }
     else {
@@ -52,7 +75,7 @@ shared_ptr<struct TrieNode> read_from_file(ifstream& inFile) {
     return root;
 }
 
-void test_dist(shared_ptr<struct TrieNode> root, string word){
+/*void test_dist(shared_ptr<struct TrieNode> root, string word){
     printf("\n%s\n", "début");
     
     printf("\n%s\n", "dist 0 :");
@@ -66,7 +89,7 @@ void test_dist(shared_ptr<struct TrieNode> root, string word){
     browse("", word, root, 2, 0, 0, words3);
     
     printf("\n%s\n", "fin");
-}
+}*/
 
 int my_menu(shared_ptr<struct TrieNode> root){
     while (1) {
@@ -85,7 +108,16 @@ int my_menu(shared_ptr<struct TrieNode> root){
             char *word = strtok(NULL, " \t");
 
             vector<string> words(1000); //PAS OUF
-            browse("", word, root, stoi(distance), 0, 0, words);
+            try {
+                if (strcmp(approx, "approx") == 0) {
+                    string words = "[";
+                    words = browse("", word, root, stoi(distance), 0, 0, words);
+                    words.push_back(']');
+                    std::cout << words << std::endl;
+                }
+            } catch (std::invalid_argument const &e) {
+                continue;
+            }
         }
     }
 }
@@ -103,5 +135,6 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     shared_ptr<struct TrieNode> root = read_from_file(inFile);
+    printf("[Log] Read: %s entries.\n", "");
     my_menu(root);
 }
