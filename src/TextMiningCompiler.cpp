@@ -10,8 +10,7 @@ using namespace std;
 struct TrieNode{
     char value;
     int freq;
-    // CHANGE SHARED_PTR
-    vector<std::shared_ptr<struct TrieNode>> childrens = {};
+    vector<std::shared_ptr<struct TrieNode>> childrens;
     shared_ptr<struct TrieNode> parent;
 };
 
@@ -30,7 +29,7 @@ shared_ptr<struct TrieNode> initializeFirstNode(shared_ptr<struct TrieNode> root
         old_node = node;
     }
     old_node->freq = first_freq;
-    std::cout << old_node->value << " " << old_node->freq;
+    //std::cout << old_node->value << " " << old_node->freq;
     return old_node;
 
 }
@@ -52,6 +51,9 @@ void sort(string path) {
     for (size_t i = 0; i < words.size(); i++) {
         outFile << words[i] << '\n';
     }
+    words.clear();
+    inFile.close();
+    outFile.close();
 }
 
 unsigned int write_node(shared_ptr<struct TrieNode> root, ofstream& outFile, unsigned int curr_offset){ // seekp(offset) | seekp(0,std::ios::end())
@@ -97,43 +99,42 @@ int main()
     shared_ptr<struct TrieNode> old_node = initializeFirstNode(root, line, nb);
 
     // CREATION TOUT LES AUTRES NODES
-
+    int length_word = 0;
     while (inFile >> line >> nb){
         // GARDER ANCIEN MOT
         // COMPARE AVEC L'ANCIEN MOT
-        std::string previous_subval = previous_val;
-        while (line.size() < previous_subval.size()){
+        while (line.size() < previous_val.size()){
             old_node = old_node->parent;
-            previous_subval = previous_subval.substr(0,previous_subval.size()-1);
+            previous_val = previous_val.substr(0,previous_val.size()-1);
             // cout << "\n"<<line << " " << old_node->value << "\n";
         }
-        if (line.compare(previous_subval) == 0){
-            old_node->freq = nb;
-            continue;
-        }
-        while (old_node->parent != nullptr && mismatch(previous_subval.begin(), previous_subval.end(), line.begin()).first != previous_subval.end()){
+        // if (line.compare(previous_val) == 0){
+        //     old_node->freq = nb;
+        //     continue;
+        // }
+        while (old_node->parent != nullptr && mismatch(previous_val.begin(), previous_val.end(), line.begin()).first != previous_val.end()){
             old_node = old_node->parent;
-            previous_subval = previous_subval.substr(0,previous_subval.size()-1);
+            previous_val = previous_val.substr(0,previous_val.size()-1);
         }
         // CHECK IF EXIST ALREADY
-        int found = 1;
-        while(found == 1){
-            found = 0;
-            for(int k = 0; k < old_node->childrens.size(); k++){
-                if (mismatch((previous_subval + old_node->childrens.at(k)->value).begin(), (previous_subval + old_node->childrens.at(k)->value).end(), line.begin()).first == (previous_subval + old_node->childrens.at(k)->value).end()){
-                    old_node = old_node->childrens.at(k);
-                    previous_subval = previous_subval + old_node->value;
-                    found = 1;
-                }
+        // int found = 1;
+        // while(found == 1){
+        //     found = 0;
+        //     for(int k = 0; k < old_node->childrens.size(); k++){
+        //         if (mismatch((previous_val + old_node->childrens.at(k)->value).begin(), (previous_val + old_node->childrens.at(k)->value).end(), line.begin()).first == (previous_val + old_node->childrens.at(k)->value).end()){
+        //             old_node = old_node->childrens.at(k);
+        //             previous_val = previous_val + old_node->value;
+        //             found = 1;
+        //         }
 
-            }
-        }
-        if (line.compare(previous_subval) == 0){
-            old_node-> freq = nb;
-            continue;
-        }
+        //     }
+        // }
+        // if (line.compare(previous_val) == 0){
+        //     old_node-> freq = nb;
+        //     continue;
+        // }
         // CREER NOUVEAU FILS MAIS ATTENTION PAS ECRASER LES AUTRES
-        int length_word = previous_subval.size();
+        length_word = previous_val.size();
         while (length_word < line.size())
         {
             shared_ptr<struct TrieNode> son = make_shared<struct TrieNode>();
@@ -155,9 +156,7 @@ int main()
     }
     inFile.close();
     std::ofstream outFile;
-    outFile.open("dict.bin");
-    //outFile.write("Salut",4);
-    write_node(root, outFile, 0);
+    outFile.open("dict.bin", std::ofstream::binary);
+    //write_node(root, outFile, 0);
     outFile.close();
-    // A ECRIRE BINAIRE
 }
