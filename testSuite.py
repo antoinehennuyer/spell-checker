@@ -39,7 +39,7 @@ def main(dist, word, path_app, path_ref, path_dict_app, path_dict_ref):
     app, ref = differenceLists(list_output_app, list_output_ref)
 
     print("\n App difference : \n")
-    print(f"{bcolors.FAIL}{bcolors.OKGREEN}")
+    print(f"{bcolors.FAIL}")
     print(app)
     print(bcolors.ENDC)
     print("\n Ref difference : \n")
@@ -49,5 +49,5 @@ def main(dist, word, path_app, path_ref, path_dict_app, path_dict_ref):
 
 
 if __name__ == '__main__':
-    main('1', 'test', 'main', 'TextMiningAppRef', 'dict.bin', 'dict2.bin')
-    #main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
+    #main('1', 'test', 'main', 'TextMiningAppRef', 'dict.bin', 'dict2.bin')
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
