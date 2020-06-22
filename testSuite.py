@@ -12,6 +12,19 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+    
+def sameOrder(firstList, secondList):
+    n1 = len(firstList)
+    n2 = len(secondList)
+    if n1 != n2:
+        return 0
+    i = 0
+    while i < n1:
+        if (firstList[i] != secondList[i]):
+            print("App : {0}\nRef : {1}".format(firstList[i], secondList[i]))
+            return 0
+        i += 1
+    return 1
 
 def differenceLists(firstList, secondList):
     app = [x for x in firstList if x not in secondList]
@@ -44,6 +57,13 @@ def main(dist, word, path_app, path_ref, path_dict_app, path_dict_ref):
     print(f"{bcolors.OKGREEN}")
     print(ref)
     print(bcolors.ENDC)
+    print("\nSame order ?")
+    if (sameOrder(list_output_app, list_output_ref)):
+        print("Yes")
+    else:
+        print("No")
+
+    
 
 
 if __name__ == '__main__':

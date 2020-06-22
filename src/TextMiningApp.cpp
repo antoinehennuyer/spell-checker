@@ -23,11 +23,10 @@ struct TrieNode{
 bool compare(Document& d1, Document& d2) {
     if (d1["distance"].GetInt() == d2["distance"].GetInt()) {
         if (d1["freq"].GetInt() == d2["freq"].GetInt()) {
-            printf("%s\n", d1["word"].GetString());
             string word1 = d1["word"].GetString();
             string word2 = d2["word"].GetString();
             int compare = word1.compare(word2);
-            return compare > 0;
+            return compare < 0;
         } else {
             return (d1["freq"].GetInt() > d2["freq"].GetInt());
         }
