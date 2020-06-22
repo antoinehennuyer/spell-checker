@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <fstream>
 #include <vector>
+#include <list>
+#include <sstream>
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
@@ -18,51 +20,102 @@ struct TrieNode{
     shared_ptr<struct TrieNode> parent;
 };
 
-string browse(string path, string word, shared_ptr<struct TrieNode> tree, int dist, int nb_error, int i, string words) {
-    if (nb_error > dist){
-        return words;
+void printJson(Document& d) {
+    StringBuffer buffer;
+    Writer<StringBuffer> writer(buffer);
+    d.Accept(writer);
+    cout << ',' << buffer.GetString();
+}
+
+Document createJson(string path, shared_ptr<struct TrieNode> tree, int nb_error) { //crée et retourne un json {word: _, freq: _, dist: _}
+    Document d;
+    Document::AllocatorType& alloc = d.GetAllocator();
+
+    d.SetObject();
+
+    Value textWord;
+    textWord.SetString(path.c_str(), alloc);
+    Value textFreq;
+    textFreq.SetInt(tree->freq);
+    Value textDist;
+    textDist.SetInt(nb_error);
+    
+    d.AddMember("word", textWord, alloc);
+    d.AddMember("freq", textFreq, alloc);
+    d.AddMember("distance", textDist, alloc);
+
+    return d;
+}
+
+vector<vector<size_t>> initErrorsMatrix(size_t length_word, size_t length_path) { // initialise et retourne la matrice des distances
+    vector<vector<size_t>> nb_errors(length_word + 1, vector<size_t>(length_path + 1));
+    size_t i = 0;
+    if (length_word < length_path) {
+        for (; i <= length_word; i++) {
+            nb_errors[0][i] = i;
+            nb_errors[i][0] = i;
+        }
+        for (; i <= length_path; i++) {
+            nb_errors[0][i] = i;
+        }
+    } else {
+        for (; i <= length_path; i++) {
+            nb_errors[0][i] = i;
+            nb_errors[i][0] = i;
+        }
+        for (; i <= length_word; i++) {
+            nb_errors[i][0] = i;
+        }
     }
-    if (word[i] == '\0') {
-        Document d;
-        Document::AllocatorType& alloc = d.GetAllocator();
-
-        d.SetObject();
-
-        Value textWord;
-        textWord.SetString(path.c_str(), alloc);
-        Value textFreq;
-        textFreq.SetInt(tree->freq);
-        Value textDist;
-        textDist.SetInt(nb_error);
+    return nb_errors;
+}
+size_t getDistance(string word, string path) //calcule et retourne la distance entre le mot "word" et le mot "path"
+{
+    size_t length_word = word.length();
+    size_t length_path = path.length();
+    
+    vector<vector<size_t>> nb_errors = initErrorsMatrix(length_word, length_path);
         
-        d.AddMember("word", textWord, alloc);
-        d.AddMember("freq", textFreq, alloc);
-        d.AddMember("distance", textDist, alloc);
-                
-        StringBuffer buffer;
-        Writer<StringBuffer> writer(buffer);
-        d.Accept(writer);
-
-        words.append(buffer.GetString());
-        return words;
-    }
-    else {
-        for (unsigned j = 0; j < tree->childrens.size(); j++) {
-            string new_path = path;
-            new_path.push_back(tree->childrens[j]->value);
-            if (tree->childrens[j]->value == word[i]) {
-                words = browse(new_path, word, tree->childrens[j], dist, nb_error, i + 1, words);
-            } else {
-                words = browse(new_path, word, tree->childrens[j], dist, nb_error + 1, i + 1, words);
+    size_t i;
+    size_t j;
+    for (i = 0; i < length_word; i++) {
+        for (j = 0; j < length_path; j++) {
+            size_t errors = 0;
+            if (word[i] != path[j]) {
+                errors = 1;
+            }
+            nb_errors[i + 1][j + 1] = min(nb_errors[i][j] + errors, min(nb_errors[i][j + 1], nb_errors[i + 1][j]) + 1);
+            if (j > 0 && path[j - 1] == word[i] && i > 0 && word[i - 1] == path[j]
+                && nb_errors[i - 1][j - 1] + errors < nb_errors[i + 1][j + 1]) { // swap
+                nb_errors[i + 1][j + 1] = nb_errors[i - 1][j - 1] + errors;
             }
         }
-        return words;
+    }
+    return nb_errors[i][j];
+}
+
+void browse(string path, string word, shared_ptr<struct TrieNode> tree, size_t dist, list<Document>& words) { //parcours l'arbre en prefix et retourne la liste des mots d'une distance "dist" du mot "word"
+    unsigned size = tree->childrens.size();
+    if (word.length() + dist >= path.length()) { // si la taille du mot recherché + la distance est plus petit que la taille du mot trouvé => impossible
+        for (unsigned j = 0; j < size; j++) { // on parcourt nos childrens
+            string new_path = path;
+            new_path.push_back(tree->childrens[j]->value); // on ajoute le caractère du noeud à notre chemin
+            if (tree->childrens[j]->freq) { // si le mot trouvé existe (freq != 0) alors on calcule sa distance
+                size_t nb_errors = getDistance(word, new_path);
+                if (nb_errors <= dist) { // si la distance n'est pas supérieur à notre distance maximal alors on ajoute le mot à notre liste
+                    words.push_back(createJson(new_path, tree->childrens[j], nb_errors));
+                    if (!dist) { // optimisation pour la distance 0, un seul mot possible, si on le trouve, on l'ajoute puis on sort de la fonction
+                        return;
+                    }
+                }
+            }
+            browse(new_path, word, tree->childrens[j], dist, words);
+        }
     }
 }
 
-shared_ptr<struct TrieNode> read_from_file(ifstream& inFile) {
+shared_ptr<struct TrieNode> read_from_file(ifstream& inFile) { //lit le fichier binaire et le retransforme en la structure tree TrieNode en prefix
     int size;
-    char value;
     shared_ptr<struct TrieNode> root = make_shared<struct TrieNode>();
     
     inFile.read(reinterpret_cast<char*>(&root->value), sizeof(char));
@@ -75,23 +128,7 @@ shared_ptr<struct TrieNode> read_from_file(ifstream& inFile) {
     return root;
 }
 
-/*void test_dist(shared_ptr<struct TrieNode> root, string word){
-    printf("\n%s\n", "début");
-    
-    printf("\n%s\n", "dist 0 :");
-    vector<string> words(1000);
-    browse("", word, root, 0, 0, 0, words);
-    printf("\n%s\n", "dist 1 :");
-    vector<string> words2(1000);
-    browse("", word, root, 1, 0, 0, words2);
-    printf("\n%s\n", "dist 2 :");
-    vector<string> words3(1000);
-    browse("", word, root, 2, 0, 0, words3);
-    
-    printf("\n%s\n", "fin");
-}*/
-
-int my_menu(shared_ptr<struct TrieNode> root){
+int my_menu(shared_ptr<struct TrieNode> root){ // menu où on entre les instructions "approx"
     while (1) {
         char line[4096];
         if (isatty(0))
@@ -107,13 +144,36 @@ int my_menu(shared_ptr<struct TrieNode> root){
             char *distance = strtok(NULL, " \t");
             char *word = strtok(NULL, " \t");
 
-            vector<string> words(1000); //PAS OUF
             try {
                 if (strcmp(approx, "approx") == 0) {
-                    string words = "[";
-                    words = browse("", word, root, stoi(distance), 0, 0, words);
-                    words.push_back(']');
-                    std::cout << words << std::endl;
+                    list<Document> words;
+
+                    size_t dist;
+                    std::stringstream sstream(distance);
+                    sstream >> dist;
+                    
+                    browse("", word, root, dist, words);
+                    cout << "[";
+                    /*for (auto& i: words) {
+                        printJson(i);
+                        cout <<
+                    }*/
+                    list<Document>::iterator it;
+                    auto begin = words.begin();
+                    auto end = words.end();
+                    for(it = begin; it!= end; ++it)
+                    {
+                        Document& item = *it;
+                        if (it != begin) {
+                            printJson(item);
+                        } else {
+                            StringBuffer buffer;
+                            Writer<StringBuffer> writer(buffer);
+                            item.Accept(writer);
+                            cout << buffer.GetString();
+                        }
+                    }
+                    cout << "]" << endl;
                 }
             } catch (std::invalid_argument const &e) {
                 continue;
@@ -123,18 +183,16 @@ int my_menu(shared_ptr<struct TrieNode> root){
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 2)
-    {
+    if (argc != 2) {
         printf("usage: %s FILE\n", argv[0]);
         exit(EXIT_FAILURE);
     }
     ifstream inFile;
     inFile.open(argv[1]);
-    if (!inFile){
-        cerr << "Unable to read the file";
+    if (!inFile) {
+        cerr << "Unable to read the file\n";
         exit(1);
     }
     shared_ptr<struct TrieNode> root = read_from_file(inFile);
-    printf("[Log] Read: %s entries.\n", "");
     my_menu(root);
 }

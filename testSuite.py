@@ -18,11 +18,9 @@ def differenceLists(firstList, secondList):
     ref = [x for x in secondList if x not in firstList]
     return app, ref
 
-def parseList(output, app=False):
+def parseList(output):
     output = output.stdout.decode("utf-8")
     output = output.replace("},{\"", "},,{\"")
-    if (app):
-        output = output.split("\n", 1)[1]
     output = output.split("[",1)[1]
     output = output.split("]", 1)[0]
     list_output = output.split(',,')
@@ -30,7 +28,7 @@ def parseList(output, app=False):
 
 def main(dist, word, path_app, path_ref, path_dict_app, path_dict_ref):
     output_app = subprocess.run(['echo approx {0} {1} | ./{2} {3}'.format(dist, word, path_app, path_dict_app)], capture_output=True, shell=True)
-    list_output_app = parseList(output_app, True)
+    list_output_app = parseList(output_app)
 
     output_ref = subprocess.run(['echo approx {0} {1} | ./{2} {3}'.format(dist, word, path_ref, path_dict_ref)],
                                 capture_output=True, shell=True)
@@ -39,7 +37,7 @@ def main(dist, word, path_app, path_ref, path_dict_app, path_dict_ref):
     app, ref = differenceLists(list_output_app, list_output_ref)
 
     print("\n App difference : \n")
-    print(f"{bcolors.FAIL}{bcolors.OKGREEN}")
+    print(f"{bcolors.FAIL}")
     print(app)
     print(bcolors.ENDC)
     print("\n Ref difference : \n")
@@ -49,5 +47,5 @@ def main(dist, word, path_app, path_ref, path_dict_app, path_dict_ref):
 
 
 if __name__ == '__main__':
-    main('1', 'test', 'main', 'TextMiningAppRef', 'dict.bin', 'dict2.bin')
-    #main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
+    #main('1', 'test', 'main', 'TextMiningAppRef', 'dict.bin', 'dict2.bin')
+    main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5], sys.argv[6])
