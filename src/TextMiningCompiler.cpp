@@ -58,7 +58,7 @@ void write_to_file(shared_ptr<struct TrieNode> root, ofstream& outFile){
     int size = root->childrens.size();
     int length_data = root->value.length();
     outFile.write(reinterpret_cast<char *>(&length_data), sizeof(int));
-    outFile.write(reinterpret_cast<char*>(&root->value), length_data);
+    outFile.write(reinterpret_cast<const char*>(root->value.c_str()), length_data);
     outFile.write(reinterpret_cast<char *>(&root->freq), sizeof(int));
     outFile.write(reinterpret_cast<char *>(&size), sizeof(int));
     for(int i = 0; i < size; i++){
