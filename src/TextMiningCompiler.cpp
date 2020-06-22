@@ -75,6 +75,7 @@ void create_all_nodes(ifstream& inFile,shared_ptr<struct TrieNode> old_node, std
     while (inFile >> line >> nb){
         while (line.size() < previous_val.size()){
             old_node = old_node->parent;
+            old_node->childrens[0]->parent = nullptr;
             if (old_node->childrens.size() <= 1)
             {
                 old_node->value = old_node->value + old_node->childrens[0]->value;
@@ -88,6 +89,7 @@ void create_all_nodes(ifstream& inFile,shared_ptr<struct TrieNode> old_node, std
         }
         while (old_node->parent != nullptr && mismatch(previous_val.begin(), previous_val.end(), line.begin()).first != previous_val.end()){
             old_node = old_node->parent;
+            old_node->childrens[0]->parent = nullptr;
             //std::string temp(1,line[previous_val.length() - 2]);
             previous_val = previous_val.substr(0,previous_val.size()-1);
             if (old_node->childrens.size() <= 1 && old_node->freq == 0 && mismatch(previous_val.begin(), previous_val.end(), line.begin()).first != previous_val.end()){
