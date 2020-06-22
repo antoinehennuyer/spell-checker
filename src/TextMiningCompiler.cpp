@@ -8,7 +8,7 @@ using namespace std;
 
 
 struct TrieNode{
-    char value;
+    std::string value;
     int freq;
     vector<std::shared_ptr<struct TrieNode>> childrens;
     shared_ptr<struct TrieNode> parent;
@@ -56,7 +56,9 @@ void sort(string path) {
 
 void write_to_file(shared_ptr<struct TrieNode> root, ofstream& outFile){
     int size = root->childrens.size();
-    outFile.write(reinterpret_cast<char*>(&root->value), sizeof(char));
+    int length_data = root->value.length();
+    outFile.write(reinterpret_cast<char *>(&length_data), sizeof(int));
+    outFile.write(reinterpret_cast<const char*>(root->value.c_str()), length_data);
     outFile.write(reinterpret_cast<char *>(&root->freq), sizeof(int));
     outFile.write(reinterpret_cast<char *>(&size), sizeof(int));
     for(int i = 0; i < size; i++){
@@ -73,12 +75,28 @@ void create_all_nodes(ifstream& inFile,shared_ptr<struct TrieNode> old_node, std
     while (inFile >> line >> nb){
         while (line.size() < previous_val.size()){
             old_node = old_node->parent;
+            if (old_node->childrens.size() <= 1)
+            {
+                old_node->value = old_node->value + old_node->childrens[0]->value;
+                old_node->freq = old_node->childrens[0]->freq;
+                old_node->childrens = old_node->childrens[0]->childrens;
+
+            }
+            // check si parent a qu'un seul fils si oui changement du old_node + suppression du fils
             previous_val = previous_val.substr(0,previous_val.size()-1);
             // cout << "\n"<<line << " " << old_node->value << "\n";
         }
         while (old_node->parent != nullptr && mismatch(previous_val.begin(), previous_val.end(), line.begin()).first != previous_val.end()){
             old_node = old_node->parent;
+            //std::string temp(1,line[previous_val.length() - 2]);
             previous_val = previous_val.substr(0,previous_val.size()-1);
+            if (old_node->childrens.size() <= 1 && old_node->freq == 0 && mismatch(previous_val.begin(), previous_val.end(), line.begin()).first != previous_val.end()){
+                old_node->value = old_node->value + old_node->childrens[0]->value;
+                old_node->freq = old_node->childrens[0]->freq;
+                old_node->childrens = old_node->childrens[0]->childrens;
+            } 
+            // check si parent 1 seul fils, changement du parent + supp
+            
         }
         // CHECK IF EXIST ALREADY
         // int found = 1;
