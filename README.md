@@ -6,6 +6,7 @@ A VOIR 1 / 4 / 5 / 6
  1.     Décrivez les choix de design de votre programme
  Projet en C++
  Deux fichiers exécutables: TextMiningCompiler et TextMiningApp
+ On utilise la lib rapidjson pour gérer la création de nos documents Json
  
  Etapes:
     Compiler:
