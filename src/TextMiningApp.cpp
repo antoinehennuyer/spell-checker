@@ -20,6 +20,15 @@ struct TrieNode{
     shared_ptr<struct TrieNode> parent;
 };
 
+/**
+* compare deux documents json de la liste des documents json afin de les trier en fonction des consignes
+*
+* @param d1 est un Document(Json)
+*
+* @param d2 est un Document(Json)
+*
+* @return retourne un boulean true si le document d1 doit être placé avant le document d2 sinon false
+*/
 bool compare(Document& d1, Document& d2) {
     if (d1["distance"].GetInt() == d2["distance"].GetInt()) {
         if (d1["freq"].GetInt() == d2["freq"].GetInt()) {
@@ -35,21 +44,11 @@ bool compare(Document& d1, Document& d2) {
     }
 }
 
-/*bool compare_dist2(Document& d1, Document& d2) {
-    unsigned int i=0;
-    size_t len1 = first.length();
-    size_t len2 = first.length();
-    while ((i<first.length()) && (i<second.length()))
-    {
-        if (tolower(first[i])<tolower(second[i]))
-            return true;
-        else if (tolower(first[i])>tolower(second[i]))
-            return false;
-        ++i;
-    }
-    return ( first.length() < second.length() );
-}*/
-
+/**
+* print le document json sous la forme : "{word: _, freq: _, dist: _},"
+*
+* @param d est le Document(Json)
+*/
 void printJson(Document& d) { //print json document:{word: _, freq: _, dist: _},
     StringBuffer buffer;
     Writer<StringBuffer> writer(buffer);
@@ -57,7 +56,18 @@ void printJson(Document& d) { //print json document:{word: _, freq: _, dist: _},
     cout << ',' << buffer.GetString();
 }
 
-Document createJson(string path, shared_ptr<struct TrieNode> tree, int nb_error) { //crée et retourne un json {word: _, freq: _, dist: _}
+/**
+* crée et retourne un json {word: _, freq: _, dist: _} à partir du path, de la fréquence du noeud et de lsa distance
+*
+* @param path est la chaine de caractère formée de tous les caractères rencontrés lors de notre descente à partir du root
+*
+* @param tree est le patricia tree
+*
+* @param nb_error nombre de "difference" rencontré (erreur) -> distance
+*
+* @return le document au format json {word: _, freq: _, dist: _}
+*/
+Document createJson(string path, shared_ptr<struct TrieNode> tree, int nb_error) {
     Document d;
     Document::AllocatorType& alloc = d.GetAllocator();
 
@@ -77,7 +87,16 @@ Document createJson(string path, shared_ptr<struct TrieNode> tree, int nb_error)
     return d;
 }
 
-vector<vector<size_t>> initErrorsMatrix(size_t length_word, size_t length_path) { // initialise et retourne la matrice des distances
+/**
+* initialise et retourne la matrice des distances
+*
+* @param length_word est la taille du mot donné en entrée
+*
+* @param length_path est la taille de la chaine de caractère formée de tous les caractères rencontrés lors de notre descente à partir du root
+*
+* @return retourne la matrice des distances entre le mot word et le mot path
+*/
+vector<vector<size_t>> initErrorsMatrix(size_t length_word, size_t length_path) {
     vector<vector<size_t>> nb_errors(length_word + 1, vector<size_t>(length_path + 1));
     size_t i = 0;
     if (length_word < length_path) {
@@ -99,8 +118,17 @@ vector<vector<size_t>> initErrorsMatrix(size_t length_word, size_t length_path) 
     }
     return nb_errors;
 }
-size_t getDistance(string word, string path) //calcule et retourne la distance entre le mot "word" et le mot "path"
-{
+
+/**
+* calcule et retourne la distance entre le mot "word" et le mot "path" à l'aide d'une matrice
+*
+* @param word est le mot donné en entrée
+*
+* @param path est la chaine de caractère formée de tous les caractères rencontrés lors de notre descente à partir du root
+*
+* @return retourne la distance entre le mot word et le mot path
+*/
+size_t getDistance(string word, string path) {
     size_t length_word = word.length();
     size_t length_path = path.length();
     
@@ -124,12 +152,25 @@ size_t getDistance(string word, string path) //calcule et retourne la distance e
     return nb_errors[i][j];
 }
 
-void browse(string path, string word, shared_ptr<struct TrieNode> tree, size_t dist, list<Document>& words) { //parcours l'arbre en prefix et retourne la liste des mots d'une distance "dist" du mot "word"
+/**
+* Parcourt l'arbre en prefix et ajoute à la liste words le document Json des mots d'une distance inférieure ou égale à "dist" du mot "word"
+*
+* @param path est la chaine de caractère formée de tous les caractères rencontrés lors de notre descente à partir du root
+*
+* @param word est le mot donné en entrée
+*
+* @param tree est le patricia tree
+*
+* @param dist est la distance donné en entrée
+*
+* @param words est la liste des documents(Json) ajouté au cours du parcourt de l'arbre
+*/
+void browse(string path, string word, shared_ptr<struct TrieNode> tree, size_t dist, list<Document>& words) {
     int size = tree->childrens.size();
     if (word.length() + dist >= path.length()) { // si la taille du mot recherché + la distance est plus petit que la taille du mot trouvé => impossible
         for (unsigned j = 0; j < size; j++) { // on parcourt nos childrens
             string new_path = path;
-            new_path.append(tree->childrens[j]->value); // on ajoute le caractère du noeud à notre chemin
+            new_path.append(tree->childrens[j]->value); // on ajoute les caractères du noeud à notre chemin
             if (tree->childrens[j]->freq) { // si le mot trouvé existe (freq != 0) alors on calcule sa distance
                 size_t nb_errors = getDistance(word, new_path);
                 if (nb_errors <= dist) { // si la distance n'est pas supérieur à notre distance maximal alors on ajoute le mot à notre liste
@@ -144,7 +185,14 @@ void browse(string path, string word, shared_ptr<struct TrieNode> tree, size_t d
     }
 }
 
-shared_ptr<struct TrieNode> read_from_file(ifstream& inFile) { //lit le fichier binaire et le retransforme en la structure tree TrieNode en prefix
+/**
+* lit le fichier binaire et le retransforme en la structure tree TrieNode en prefix
+*
+* @param inFile FileStream est le fichier binaire
+*
+* @return root est le patricia tree
+*/
+shared_ptr<struct TrieNode> read_from_file(ifstream& inFile) {
     int size;
     int length_data;
     shared_ptr<struct TrieNode> root = make_shared<struct TrieNode>();
@@ -164,6 +212,13 @@ shared_ptr<struct TrieNode> read_from_file(ifstream& inFile) { //lit le fichier 
     return root;
 }
 
+/**
+*  menu où l'on entre les instructions "approx"
+*
+* @param root Patricia Tree
+*
+* @return 0 si pas d'erreur 1 sinon
+*/
 int my_menu(shared_ptr<struct TrieNode> root){ // menu où on entre les instructions "approx"
     while (1) {
         char line[4096];
