@@ -14,13 +14,43 @@ using namespace rapidjson;
 using namespace std;
 
 struct TrieNode{
-    char value;
+    std::string value;
     int freq;
     vector<std::shared_ptr<struct TrieNode>> childrens;
     shared_ptr<struct TrieNode> parent;
 };
 
-void printJson(Document& d) {
+bool compare(Document& d1, Document& d2) {
+    if (d1["distance"].GetInt() == d2["distance"].GetInt()) {
+        if (d1["freq"].GetInt() == d2["freq"].GetInt()) {
+            string word1 = d1["word"].GetString();
+            string word2 = d2["word"].GetString();
+            int compare = word1.compare(word2);
+            return compare < 0;
+        } else {
+            return (d1["freq"].GetInt() > d2["freq"].GetInt());
+        }
+    } else {
+        return (d1["distance"].GetInt() < d2["distance"].GetInt());
+    }
+}
+
+/*bool compare_dist2(Document& d1, Document& d2) {
+    unsigned int i=0;
+    size_t len1 = first.length();
+    size_t len2 = first.length();
+    while ((i<first.length()) && (i<second.length()))
+    {
+        if (tolower(first[i])<tolower(second[i]))
+            return true;
+        else if (tolower(first[i])>tolower(second[i]))
+            return false;
+        ++i;
+    }
+    return ( first.length() < second.length() );
+}*/
+
+void printJson(Document& d) { //print json document:{word: _, freq: _, dist: _},
     StringBuffer buffer;
     Writer<StringBuffer> writer(buffer);
     d.Accept(writer);
@@ -95,11 +125,11 @@ size_t getDistance(string word, string path) //calcule et retourne la distance e
 }
 
 void browse(string path, string word, shared_ptr<struct TrieNode> tree, size_t dist, list<Document>& words) { //parcours l'arbre en prefix et retourne la liste des mots d'une distance "dist" du mot "word"
-    unsigned size = tree->childrens.size();
+    int size = tree->childrens.size();
     if (word.length() + dist >= path.length()) { // si la taille du mot recherché + la distance est plus petit que la taille du mot trouvé => impossible
         for (unsigned j = 0; j < size; j++) { // on parcourt nos childrens
             string new_path = path;
-            new_path.push_back(tree->childrens[j]->value); // on ajoute le caractère du noeud à notre chemin
+            new_path.append(tree->childrens[j]->value); // on ajoute le caractère du noeud à notre chemin
             if (tree->childrens[j]->freq) { // si le mot trouvé existe (freq != 0) alors on calcule sa distance
                 size_t nb_errors = getDistance(word, new_path);
                 if (nb_errors <= dist) { // si la distance n'est pas supérieur à notre distance maximal alors on ajoute le mot à notre liste
@@ -116,12 +146,18 @@ void browse(string path, string word, shared_ptr<struct TrieNode> tree, size_t d
 
 shared_ptr<struct TrieNode> read_from_file(ifstream& inFile) { //lit le fichier binaire et le retransforme en la structure tree TrieNode en prefix
     int size;
+    int length_data;
     shared_ptr<struct TrieNode> root = make_shared<struct TrieNode>();
     
-    inFile.read(reinterpret_cast<char*>(&root->value), sizeof(char));
+    inFile.read(reinterpret_cast<char *>(&length_data), sizeof(int));
+    char value[length_data + 1];
+    value[length_data] = '\0';
+    inFile.read(reinterpret_cast<char*>(&value), length_data);
     inFile.read(reinterpret_cast<char *>(&root->freq), sizeof(int));
     inFile.read(reinterpret_cast<char *>(&size), sizeof(int));
     
+    root->value = string(value);
+
     for (int i = 0; i < size; i++) {
         root->childrens.push_back(read_from_file(inFile));
     }
@@ -154,10 +190,7 @@ int my_menu(shared_ptr<struct TrieNode> root){ // menu où on entre les instruct
                     
                     browse("", word, root, dist, words);
                     cout << "[";
-                    /*for (auto& i: words) {
-                        printJson(i);
-                        cout <<
-                    }*/
+                    words.sort(compare);
                     list<Document>::iterator it;
                     auto begin = words.begin();
                     auto end = words.end();
@@ -194,5 +227,6 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     shared_ptr<struct TrieNode> root = read_from_file(inFile);
+    inFile.close();
     my_menu(root);
 }
