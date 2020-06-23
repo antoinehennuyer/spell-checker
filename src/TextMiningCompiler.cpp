@@ -1,3 +1,7 @@
+/**
+ * @file TextMiningCompiler.cpp
+ */
+
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -5,15 +9,18 @@
 #include <algorithm>
 using namespace std;
 #include <thread>
+#include "PatriciaTrie.hh"
 
 
-struct TrieNode{
-    std::string value;
-    int freq;
-    vector<std::shared_ptr<struct TrieNode>> childrens;
-    shared_ptr<struct TrieNode> parent;
-};
-
+/**
+ * Fuction to initialize the deepest left branch of the tree.
+ * 
+ * @param root Root node of the tree. The function will use this node to start.
+ * 
+ * @param first_val First word processed to create the tree.
+ * 
+ * @param first_freq Frequency associate to the paramater first_val.
+ */
 shared_ptr<struct TrieNode> initializeFirstNode(shared_ptr<struct TrieNode> root, string first_val, int first_freq){
     // PROCESS PREMIERE LIGNE
     // CREATION PREMIER NODE
@@ -31,7 +38,11 @@ shared_ptr<struct TrieNode> initializeFirstNode(shared_ptr<struct TrieNode> root
     //std::cout << old_node->value << " " << old_node->freq;
     return old_node;
 }
-
+/**
+ * Sort the input file in "out.txt".
+ * 
+ * @param path Path of the file to sort.
+ */
 void sort(string path) {
     ifstream inFile(path);
     if (!inFile){
@@ -54,6 +65,13 @@ void sort(string path) {
     outFile.close();
 }
 
+/**
+ * Write a tree structure inside a binary file.
+ * 
+ * @param root Root node of the tree. The function will use this node to start.
+ * 
+ * @param outFile FileStream that will use to write the tree.
+ */
 void write_to_file(shared_ptr<struct TrieNode> root, ofstream& outFile){
     int size = root->childrens.size();
     int length_data = root->value.length();
@@ -65,7 +83,15 @@ void write_to_file(shared_ptr<struct TrieNode> root, ofstream& outFile){
         write_to_file(root->childrens.at(i), outFile);
     }
 }
-
+/**
+ * From the deepest left branch, create all the rest of the tree.
+ * 
+ * @param inFile stream of the input file which contains all the words that need to be process.
+ * 
+ * @param old_node The last node that have been process. In this case the deepest left node.
+ * 
+ * @param previous_val The last word that have been process.
+ */
 void create_all_nodes(ifstream& inFile,shared_ptr<struct TrieNode> old_node, std::string previous_val){
 
         // CREATION TOUT LES AUTRES NODES
