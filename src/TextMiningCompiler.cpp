@@ -20,6 +20,8 @@ using namespace std;
  * @param first_val First word processed to create the tree.
  * 
  * @param first_freq Frequency associate to the paramater first_val.
+ * 
+ * @return Return the last node create. (deepest left branch)
  */
 shared_ptr<struct TrieNode> initializeFirstNode(shared_ptr<struct TrieNode> root, string first_val, int first_freq){
     // PROCESS PREMIERE LIGNE
