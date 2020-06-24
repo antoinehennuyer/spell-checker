@@ -1,3 +1,7 @@
+/**
+ * @file TextMiningApp.cpp
+ */
+
 #include <iostream>
 #include <string>
 #include <unistd.h>
@@ -10,6 +14,11 @@
 #include "rapidjson/stringbuffer.h"
 #include <thread>
 #include "PatriciaTrie.hh"
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+
 
 using namespace rapidjson;
 
@@ -209,6 +218,74 @@ shared_ptr<struct TrieNode> read_from_file(ifstream& inFile) {
     return root;
 }
 
+int getSize(char* buffer) {
+    return (int) *buffer;
+}
+
+int getFreq(char* buffer) {
+    return (int) *(buffer + sizeof(int));
+}
+
+size_t getValue(char* buffer, string value) {
+    size_t i = 0;
+    while ((char) *(buffer + 2 * sizeof(int) + i) != '\0') {
+        char c = (char) *(buffer + 2 * sizeof(int) + i);
+        printf("%c\n", c);
+        value = value + c; //ATTENTION CERTAINEMENT PAS BON
+        i = i + 1;
+    }
+    return i;
+}
+
+void read_file(char* path) {
+    int fd = open(path, O_RDONLY);
+    if (fd == -1)
+        exit(EXIT_FAILURE);
+    struct stat st;
+    if (fstat(fd, &st) != 0)
+    {
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
+    long unsigned size_check = st.st_size;
+    if (size_check < sizeof(shared_ptr<struct TrieNode>))
+    {
+        close(fd);
+        exit(EXIT_FAILURE);
+    }
+    void *buffer_void = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    char *buffer = (char *)buffer_void;
+
+    //shared_ptr<struct TrieNode> root = make_shared<struct TrieNode>();
+    //root->value = '\0';
+    //root->freq = 0;
+    //root->parent = nullptr;
+    //std::string previous_val = line;*/
+    int size = getSize(buffer); //(int) *buffer;
+    int freq = getFreq(buffer); //(int) *(buffer + sizeof(int));
+    string value = "";
+    size_t i = getValue(buffer, value) + 1;
+    printf("size : %d\n", size);
+    printf("freq : %d\n", freq);
+    printf("value : %s\n", value.c_str());
+    printf("I : %zu\n", i);
+    //printf("%d", (unsigned) *(buffer + 2 * sizeof(int) + i));
+    for (size_t j = i; j < size; j++) {
+        printf("OFFSET : %u\n", (unsigned int) *(buffer + 2 * sizeof(int) + sizeof(char) + j));
+        char *buffer_child = buffer + 156;//(unsigned int) *(buffer + 2 * sizeof(int) + j);
+        
+        size = getSize(buffer_child); //(int) *buffer;
+        freq = getFreq(buffer_child); //(int) *(buffer + sizeof(int));
+        string value;
+        j = getValue(buffer_child, value);
+        printf("J : %zu\n", j);
+        printf("second size : %d\n", size);
+        printf("second freq : %d\n", freq);
+        printf("second value : %s\n", value.c_str());
+        break;
+    }
+}
+
 /**
 *  menu où l'on entre les instructions "approx"
 *
@@ -272,7 +349,8 @@ int main(int argc, char *argv[]) {
         printf("usage: %s FILE\n", argv[0]);
         exit(EXIT_FAILURE);
     }
-    ifstream inFile;
+    read_file(argv[1]);
+    /*ifstream inFile;
     inFile.open(argv[1]);
     if (!inFile) {
         cerr << "Unable to read the file\n";
@@ -280,5 +358,5 @@ int main(int argc, char *argv[]) {
     }
     shared_ptr<struct TrieNode> root = read_from_file(inFile);
     inFile.close();
-    my_menu(root);
+    my_menu(root);*/
 }
