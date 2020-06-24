@@ -8,17 +8,14 @@
 #include "rapidjson/document.h"
 #include "rapidjson/writer.h"
 #include "rapidjson/stringbuffer.h"
+#include <thread>
+#include "PatriciaTrie.hh"
 
 using namespace rapidjson;
 
 using namespace std;
 
-struct TrieNode{
-    std::string value;
-    int freq;
-    vector<std::shared_ptr<struct TrieNode>> childrens;
-    shared_ptr<struct TrieNode> parent;
-};
+
 
 /**
 * compare deux documents json de la liste des documents json afin de les trier en fonction des consignes
