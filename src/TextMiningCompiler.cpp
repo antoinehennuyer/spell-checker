@@ -74,8 +74,7 @@ unsigned int write_node(shared_ptr<struct TrieNode> root, ofstream& outFile, uns
     outFile.write((char*)&size, sizeof(int));
 
     outFile.write((char*)&root->freq, sizeof(int));
-
-    outFile.write((char*)&root->value, sizeof(char) * root->value.length());
+    outFile.write((char*)root->value.c_str(), sizeof(char) * root->value.length());
     char sep = 0;
     outFile.write(&sep, sizeof(char));
 
@@ -86,6 +85,8 @@ unsigned int write_node(shared_ptr<struct TrieNode> root, ofstream& outFile, uns
 
     for (int i = 0; i < root->childrens.size(); i++){
         offset_for_nodes[i] = next_offset;
+        std::cout << next_offset;
+        exit(1);
         next_offset = write_node(root->childrens.at(i), outFile, next_offset);
     }
 
@@ -190,13 +191,19 @@ void create_all_nodes(ifstream& inFile,shared_ptr<struct TrieNode> old_node, std
 
 int main(int argc, char *argv[])
 {
-    if (argc != 3) {
-        printf("usage: %s FILE\n", argv[0]);
-        std::cout << argc;
-        exit(EXIT_FAILURE);
-    }
-    std::cout << argv[1];
-    sort(argv[1]);
+    // std::string str = "";
+    // const char *byby = str.c_str();
+    // std::cout << str.length();
+    // if (byby[0] == '\0'){
+    //     std::cout << "OK";
+    // }
+    // if (argc != 3) {
+    //     printf("usage: %s FILE\n", argv[0]);
+    //     std::cout << argc;
+    //     exit(EXIT_FAILURE);
+    // }
+    // std::cout << argv[1];
+    sort("../words.txt");
     ifstream inFile;
     inFile.open("out.txt");
     if (!inFile){
@@ -208,7 +215,7 @@ int main(int argc, char *argv[])
 
     inFile >> line >> nb;
     shared_ptr<struct TrieNode> root = make_shared<struct TrieNode>();
-    root->value = '\0';
+    root->value = "";
     root->freq = 0;
     root->parent = nullptr;
     std::string previous_val = line;
@@ -218,7 +225,7 @@ int main(int argc, char *argv[])
     //std::cout << root->childrens.at(0)->value << " freq:" << root->childrens.at(0)->freq;
     inFile.close();
     std::ofstream outFile;
-    outFile.open(argv[2]);
+    outFile.open("dict.bin");
     write_node(root, outFile, 0);
     //write_to_file(root, outFile);
     outFile.close();
