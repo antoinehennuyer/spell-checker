@@ -67,6 +67,33 @@ void sort(string path) {
     outFile.close();
 }
 
+
+unsigned int write_node(shared_ptr<struct TrieNode> root, ofstream& outFile, unsigned int curr_offset){ // seekp(offset) | seekp(0,std::ios::end())
+    outFile.seekp(curr_offset);
+    int size = root->childrens.size();
+    outFile.write((char*)&size, sizeof(int));
+
+    outFile.write((char*)&root->freq, sizeof(int));
+
+    outFile.write((char*)&root->value, sizeof(char) * root->value.length());
+    char sep = 0;
+    outFile.write(&sep, sizeof(char));
+
+    unsigned int offset_sons = curr_offset + sizeof(int) + sizeof(int) + (root->value.length()+1) * sizeof(char);
+    unsigned int next_offset = offset_sons + size * sizeof(unsigned int);
+
+    std::vector<unsigned  int> offset_for_nodes(size);
+
+    for (int i = 0; i < root->childrens.size(); i++){
+        offset_for_nodes[i] = next_offset;
+        next_offset = write_node(root->childrens.at(i), outFile, next_offset);
+    }
+
+    outFile.seekp(offset_sons);
+    outFile.write((char *)offset_for_nodes.data(), offset_for_nodes.size() * sizeof(unsigned int));
+    return next_offset;
+}
+
 /**
  * Write a tree structure inside a binary file.
  * 
@@ -192,6 +219,7 @@ int main(int argc, char *argv[])
     inFile.close();
     std::ofstream outFile;
     outFile.open(argv[2]);
-    write_to_file(root, outFile);
+    write_node(root, outFile, 0);
+    //write_to_file(root, outFile);
     outFile.close();
 }
