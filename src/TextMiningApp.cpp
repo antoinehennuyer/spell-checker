@@ -222,21 +222,24 @@ int getSize(char* buffer) {
     return (int) *buffer;
 }
 
-int getFreq(char* buffer) {
-    return (int) *(buffer + sizeof(int));
+int *getFreq(char* buffer) {
+    return (int*) (buffer + sizeof(int));
 }
 
-size_t getValue(char* buffer, string value) {
+size_t getValue(char* buffer, string &value) {
     size_t i = 0;
     while ((char) *(buffer + 2 * sizeof(int) + i) != '\0') {
         char c = (char) *(buffer + 2 * sizeof(int) + i);
-        printf("%c\n", c);
-        value = value + c; //ATTENTION CERTAINEMENT PAS BON
+        value += c;
         i = i + 1;
     }
     return i;
 }
 
+unsigned int getoffset(char *buff_child, int child, int size_value){
+    return *(unsigned int *)(buff_child + 2 * sizeof(int) + size_value * sizeof(char) + 1 + sizeof(unsigned int) * child);
+
+}
 void read_file(char* path) {
     int fd = open(path, O_RDONLY);
     if (fd == -1)
@@ -255,34 +258,26 @@ void read_file(char* path) {
     }
     void *buffer_void = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
     char *buffer = (char *)buffer_void;
-
-    //shared_ptr<struct TrieNode> root = make_shared<struct TrieNode>();
-    //root->value = '\0';
-    //root->freq = 0;
-    //root->parent = nullptr;
-    //std::string previous_val = line;*/
+    // ROOT NODE
     int size = getSize(buffer); //(int) *buffer;
-    int freq = getFreq(buffer); //(int) *(buffer + sizeof(int));
+    int freq = *getFreq(buffer); //(int) *(buffer + sizeof(int));
     string value = "";
-    size_t i = getValue(buffer, value) + 1;
+    size_t i = getValue(buffer, value) ;
     printf("size : %d\n", size);
     printf("freq : %d\n", freq);
     printf("value : %s\n", value.c_str());
-    printf("I : %zu\n", i);
-    //printf("%d", (unsigned) *(buffer + 2 * sizeof(int) + i));
-    for (size_t j = i; j < size; j++) {
-        printf("OFFSET : %u\n", (unsigned int) *(buffer + 2 * sizeof(int) + sizeof(char) + j));
-        char *buffer_child = buffer + 156;//(unsigned int) *(buffer + 2 * sizeof(int) + j);
-        
-        size = getSize(buffer_child); //(int) *buffer;
-        freq = getFreq(buffer_child); //(int) *(buffer + sizeof(int));
+    // SON OF THE ROOT
+
+    for (size_t j = 0; j < size; j++) {
+        unsigned offset = getoffset(buffer, j, i); // i = size of the parent's value
+        printf("OFFSET : %u\n", offset);
+        char *buffer_child = buffer + offset;//(unsigned int) *(buffer + 2 * sizeof(int) + j);
+        freq = *getFreq(buffer_child); //(int) *(buffer + sizeof(int));
         string value;
-        j = getValue(buffer_child, value);
-        printf("J : %zu\n", j);
-        printf("second size : %d\n", size);
+        getValue(buffer_child, value);
+        printf("second size : %d\n", getSize(buffer_child));
         printf("second freq : %d\n", freq);
         printf("second value : %s\n", value.c_str());
-        break;
     }
 }
 

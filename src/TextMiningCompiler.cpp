@@ -72,8 +72,9 @@ unsigned int write_node(shared_ptr<struct TrieNode> root, ofstream& outFile, uns
     outFile.seekp(curr_offset);
     int size = root->childrens.size();
     outFile.write((char*)&size, sizeof(int));
+    int freq = root->freq;
+    outFile.write((char*)&freq, sizeof(int)); // BUG ?
 
-    outFile.write((char*)&root->freq, sizeof(int));
     outFile.write((char*)root->value.c_str(), sizeof(char) * root->value.length());
     char sep = 0;
     outFile.write(&sep, sizeof(char));
@@ -85,8 +86,6 @@ unsigned int write_node(shared_ptr<struct TrieNode> root, ofstream& outFile, uns
 
     for (int i = 0; i < root->childrens.size(); i++){
         offset_for_nodes[i] = next_offset;
-        std::cout << next_offset;
-        exit(1);
         next_offset = write_node(root->childrens.at(i), outFile, next_offset);
     }
 
