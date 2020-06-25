@@ -190,19 +190,13 @@ void create_all_nodes(ifstream& inFile,shared_ptr<struct TrieNode> old_node, std
 
 int main(int argc, char *argv[])
 {
-    // std::string str = "";
-    // const char *byby = str.c_str();
-    // std::cout << str.length();
-    // if (byby[0] == '\0'){
-    //     std::cout << "OK";
-    // }
-    // if (argc != 3) {
-    //     printf("usage: %s FILE\n", argv[0]);
-    //     std::cout << argc;
-    //     exit(EXIT_FAILURE);
-    // }
-    // std::cout << argv[1];
-    sort("../words.txt");
+
+    if (argc != 3) {
+        printf("usage: %s FILE\n", argv[0]);
+        std::cout << argc;
+        exit(EXIT_FAILURE);
+    }
+    sort(argv[1]);
     ifstream inFile;
     inFile.open("out.txt");
     if (!inFile){
@@ -224,7 +218,7 @@ int main(int argc, char *argv[])
     //std::cout << root->childrens.at(0)->value << " freq:" << root->childrens.at(0)->freq;
     inFile.close();
     std::ofstream outFile;
-    outFile.open("dict.bin");
+    outFile.open(argv[2]);
     write_node(root, outFile, 0);
     //write_to_file(root, outFile);
     outFile.close();
