@@ -9,9 +9,9 @@
 #include <vector>
 #include <list>
 #include <sstream>
-#include "rapidjson/document.h"
+/*#include "rapidjson/document.h"
 #include "rapidjson/writer.h"
-#include "rapidjson/stringbuffer.h"
+#include "rapidjson/stringbuffer.h"*/
 #include <thread>
 #include "PatriciaTrie.hh"
 #include <sys/mman.h>
@@ -20,9 +20,15 @@
 #include <fcntl.h>
 
 
-using namespace rapidjson;
+//using namespace rapidjson;
 
 using namespace std;
+
+struct Document {
+    string word;
+    int freq;
+    int distance;
+};
 
 int getSize(char* buffer) {
     return (int) *buffer;
@@ -56,7 +62,7 @@ unsigned int getoffset(char *buff_child, int child, int size_value){
 * @return retourne un boulean true si le document d1 doit être placé avant le document d2 sinon false
 */
 bool compare(Document& d1, Document& d2) {
-    if (d1["distance"].GetInt() == d2["distance"].GetInt()) {
+    /*if (d1["distance"].GetInt() == d2["distance"].GetInt()) {
         if (d1["freq"].GetInt() == d2["freq"].GetInt()) {
             string word1 = d1["word"].GetString();
             string word2 = d2["word"].GetString();
@@ -67,6 +73,18 @@ bool compare(Document& d1, Document& d2) {
         }
     } else {
         return (d1["distance"].GetInt() < d2["distance"].GetInt());
+    }*/
+    if (d1.distance == d2.distance) {
+        if (d1.freq == d2.freq) {
+            string word1 = d1.word;
+            string word2 = d2.word;
+            int compare = word1.compare(word2);
+            return compare < 0;
+        } else {
+            return (d1.freq > d2.freq);
+        }
+    } else {
+        return (d1.distance < d2.distance);
     }
 }
 
@@ -76,10 +94,11 @@ bool compare(Document& d1, Document& d2) {
 * @param d est le Document(Json)
 */
 void printJson(Document& d) { //print json document:{word: _, freq: _, dist: _},
-    StringBuffer buffer;
+    /*StringBuffer buffer;
     Writer<StringBuffer> writer(buffer);
     d.Accept(writer);
-    cout << ',' << buffer.GetString();
+    cout << ',' << buffer.GetString();*/
+    cout << ",{\"word\":\"" << d.word << "\",\"freq\":" << d.freq << ",\"distance\":" << d.distance << "}";
 }
 
 /**
@@ -114,7 +133,7 @@ void printJson(Document& d) { //print json document:{word: _, freq: _, dist: _},
 }*/
 
 Document createJson(string path, char* buffer, int nb_error) {
-    Document d;
+    /*Document d;
     Document::AllocatorType& alloc = d.GetAllocator();
 
     d.SetObject();
@@ -130,7 +149,9 @@ Document createJson(string path, char* buffer, int nb_error) {
     
     d.AddMember("word", textWord, alloc);
     d.AddMember("freq", textFreq, alloc);
-    d.AddMember("distance", textDist, alloc);
+    d.AddMember("distance", textDist, alloc);*/
+    
+    struct Document d = {path.c_str(), *getFreq(buffer), nb_error};
 
     return d;
 }
@@ -213,82 +234,20 @@ size_t getDistance(string word, string path) {
 *
 * @param words est la liste des documents(Json) ajouté au cours du parcourt de l'arbre
 */
-/*void browse(string path, string word, shared_ptr<struct TrieNode> tree, size_t dist, list<Document>& words) {
-    int size = tree->childrens.size();
-    if (word.length() + dist >= path.length()) { // si la taille du mot recherché + la distance est plus petit que la taille du mot trouvé => impossible
-        for (unsigned j = 0; j < size; j++) { // on parcourt nos childrens
-            string new_path = path;
-            new_path.append(tree->childrens[j]->value); // on ajoute les caractères du noeud à notre chemin
-            if (tree->childrens[j]->freq) { // si le mot trouvé existe (freq != 0) alors on calcule sa distance
-                size_t nb_errors = getDistance(word, new_path);
-                if (nb_errors <= dist) { // si la distance n'est pas supérieur à notre distance maximal alors on ajoute le mot à notre liste
-                    words.push_back(createJson(new_path, tree->childrens[j], nb_errors));
-                    if (!dist) { // optimisation pour la distance 0, un seul mot possible, si on le trouve, on l'ajoute puis on sort de la fonction
-                        return;
-                    }
-                }
-            }
-            browse(new_path, word, tree->childrens[j], dist, words);
-        }
-    }
-}*/
 void browse(string path, string word, char* root, char* tree, size_t dist, list<Document>& words) {
-    /*void *buffer_void = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
-    char *buffer = (char *)buffer_void;
-    // ROOT NODE
-    int size = getSize(buffer); //(int) *buffer;
-    int freq = *getFreq(buffer); //(int) *(buffer + sizeof(int));
-    string value = "";
-    size_t i = getValue(buffer, value) ;
-    printf("size : %d\n", size);
-    printf("freq : %d\n", freq);
-    printf("value : %s\n", value.c_str());
-    // SON OF THE ROOT
-
-    for (size_t j = 0; j < size; j++) {
-        unsigned offset = getoffset(buffer, j, i); // i = size of the parent's value
-        printf("OFFSET : %u\n", offset);
-        char *buffer_child = buffer + offset;//(unsigned int) *(buffer + 2 * sizeof(int) + j);
-        freq = *getFreq(buffer_child); //(int) *(buffer + sizeof(int));
-        string value;
-        getValue(buffer_child, value);
-        printf("second size : %d\n", getSize(buffer_child));
-        printf("second freq : %d\n", freq);
-        printf("second value : %s\n", value.c_str());
-    }*/
     int size = getSize(tree);
     string value = "";
     size_t i = getValue(tree, value);//PAS BIEN
-    /*printf("\nsize : %d\n", size);
-    printf("value : %s\n", value.c_str());*/
-    
-    
-    /*int freq = *getFreq(tree);
-    printf("freq : %d\n", freq);
-    printf("I : %zu\n", i);*/
-    
-    
-    
+
     if (word.length() + dist >= path.length()) { // si la taille du mot recherché + la distance est plus petit que la taille du mot trouvé => impossible
         for (unsigned j = 0; j < size; j++) { // on parcourt nos childrens
-            //printf("\nJ : %u\n", j);
-            
             string new_path = path;
             unsigned offset = getoffset(tree, j, i); // i = size of the parent's value
-            //printf("OFFSET : %u\n", offset);
             char *child = root + offset;
             value = "";
             getValue(child, value); //RECUP LE I
-            //printf("Child value : %s\n", value.c_str());
             new_path.append(value); // on ajoute les caractères du noeud à notre chemin
-            //printf("PATH : %s\n", new_path.c_str());
-            /*string new_path = path;
-            string value = "";
-            size_t i = getValue(buffer, value) ;
-            new_path.append(value);*/
-            //new_path.append(tree->childrens[j]->value); // on ajoute les caractères du noeud à notre chemin
             int freq = *getFreq(child);
-            //printf("Child freq : %d\n", freq);
             if (freq) { // si le mot trouvé existe (freq != 0) alors on calcule sa distance
                 size_t nb_errors = getDistance(word, new_path);
                 if (nb_errors <= dist) { // si la distance n'est pas supérieur à notre distance maximal alors on ajoute le mot à notre liste
@@ -298,17 +257,6 @@ void browse(string path, string word, char* root, char* tree, size_t dist, list<
                     }
                 }
             }
-            /*for (size_t j = 0; j < size; j++) {
-                unsigned offset = getoffset(buffer, j, i); // i = size of the parent's value
-                printf("OFFSET : %u\n", offset);
-                char *buffer_child = buffer + offset;//(unsigned int) *(buffer + 2 * sizeof(int) + j);
-                freq = *getFreq(buffer_child); //(int) *(buffer + sizeof(int));
-                string value;
-                getValue(buffer_child, value);
-                printf("second size : %d\n", getSize(buffer_child));
-                printf("second freq : %d\n", freq);
-                printf("second value : %s\n", value.c_str());
-            }*/
             browse(new_path, word, root, child, dist, words);
         }
     }
@@ -345,28 +293,6 @@ char* read_file(int fd, long unsigned size_check) {
     void *buffer_void = mmap(NULL, size_check, PROT_READ, MAP_PRIVATE, fd, 0);
     close(fd);
     return (char *)buffer_void;
-    /*char *buffer = (char *)buffer_void;
-    // ROOT NODE
-    int size = getSize(buffer); //(int) *buffer;
-    int freq = *getFreq(buffer); //(int) *(buffer + sizeof(int));
-    string value = "";
-    size_t i = getValue(buffer, value) ;
-    printf("size : %d\n", size);
-    printf("freq : %d\n", freq);
-    printf("value : %s\n", value.c_str());
-    // SON OF THE ROOT
-
-    for (size_t j = 0; j < size; j++) {
-        unsigned offset = getoffset(buffer, j, i); // i = size of the parent's value
-        printf("OFFSET : %u\n", offset);
-        char *buffer_child = buffer + offset;//(unsigned int) *(buffer + 2 * sizeof(int) + j);
-        freq = *getFreq(buffer_child); //(int) *(buffer + sizeof(int));
-        string value;
-        getValue(buffer_child, value);
-        printf("second size : %d\n", getSize(buffer_child));
-        printf("second freq : %d\n", freq);
-        printf("second value : %s\n", value.c_str());
-    }*/
 }
 
 /**
@@ -412,10 +338,11 @@ int my_menu(char* root){ // menu où on entre les instructions "approx"
                         if (it != begin) {
                             printJson(item);
                         } else {
-                            StringBuffer buffer;
+                            /*StringBuffer buffer;
                             Writer<StringBuffer> writer(buffer);
                             item.Accept(writer);
-                            cout << buffer.GetString();
+                            cout << buffer.GetString();*/
+                            cout << "{\"word\":\"" << item.word << "\",\"freq\":" << item.freq << ",\"distance\":" << item.distance << "}";
                         }
                     }
                     cout << "]" << endl;
@@ -432,14 +359,6 @@ int main(int argc, char *argv[]) {
         printf("usage: %s FILE\n", argv[0]);
         exit(EXIT_FAILURE);
     }
-    /*read_file(argv[1]);
-    ifstream inFile;
-    inFile.open(argv[1]);
-    if (!inFile) {
-        cerr << "Unable to read the file\n";
-        exit(1);
-    }
-    shared_ptr<struct TrieNode> root = read_from_file(inFile);*/
     int fd = open(argv[1], O_RDONLY);
     if (fd == -1)
         exit(EXIT_FAILURE);
@@ -456,7 +375,6 @@ int main(int argc, char *argv[]) {
         exit(EXIT_FAILURE);
     }
     char* root = read_file(fd, size_check);
-    //inFile.close();
     my_menu(root);
     if (munmap(root, size_check) == -1) {
        cerr << "munmap failed with error:";
