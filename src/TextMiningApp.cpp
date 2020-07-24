@@ -9,9 +9,6 @@
 #include <vector>
 #include <list>
 #include <sstream>
-/*#include "rapidjson/document.h"
-#include "rapidjson/writer.h"
-#include "rapidjson/stringbuffer.h"*/
 #include <thread>
 #include "PatriciaTrie.hh"
 #include <sys/mman.h>
@@ -30,14 +27,39 @@ struct Document {
     int distance;
 };
 
+/**
+ * retourne la taille du noeud
+ *
+ * @param buffer est le patricia tree
+ *
+ * @return retourne la taille du noeud
+*/
 int getSize(char* buffer) {
     return (int) *buffer;
 }
 
+/**
+ * retourne la fréquence du noeud
+ *
+ * @param buffer est le patricia tree
+ *
+ * @return retourne la fréquence du noeud
+*/
 int *getFreq(char* buffer) {
     return (int*) (buffer + sizeof(int));
 }
 
+/**
+ * retourne la valeur du noeud
+ *
+ * @param buffer est le patricia tree
+ *
+ * @param value  est la string parcouru
+ *
+ * @param size_value  la taille de la valeur
+ *
+ * @return retourne la valeur du noeud
+*/
 size_t getValue(char* buffer, string &value) {
     size_t i = 0;
     while ((char) *(buffer + 2 * sizeof(int) + i) != '\0') {
@@ -48,32 +70,31 @@ size_t getValue(char* buffer, string &value) {
     return i;
 }
 
+/**
+ * compare deux documents json de la liste des documents json afin de les trier en fonction des consignes
+ *
+ * @param buff_child est le fils du patricia tree
+ *
+ * @param child  est le numéro du fils
+ *
+ * @param size_value  la taille de la valeur
+ *
+ * @return retourne offset du fils child
+*/
 unsigned int getoffset(char *buff_child, int child, int size_value){
     return *(unsigned int *)(buff_child + 2 * sizeof(int) + (size_value + 1) * sizeof(char) + sizeof(unsigned int) * child);
 }
 
 /**
-* compare deux documents json de la liste des documents json afin de les trier en fonction des consignes
-*
-* @param d1 est un Document(Json)
-*
-* @param d2 est un Document(Json)
-*
-* @return retourne un boulean true si le document d1 doit être placé avant le document d2 sinon false
+ * compare deux documents json de la liste des documents json afin de les trier en fonction des consignes
+ *
+ * @param d1 est un Document(Json)
+ *
+ * @param d1 est un Document(Json)
+ *
+ * @return retourne un boulean true si le document d1 doit être placé avant le document d2 sinon false
 */
 bool compare(Document& d1, Document& d2) {
-    /*if (d1["distance"].GetInt() == d2["distance"].GetInt()) {
-        if (d1["freq"].GetInt() == d2["freq"].GetInt()) {
-            string word1 = d1["word"].GetString();
-            string word2 = d2["word"].GetString();
-            int compare = word1.compare(word2);
-            return compare < 0;
-        } else {
-            return (d1["freq"].GetInt() > d2["freq"].GetInt());
-        }
-    } else {
-        return (d1["distance"].GetInt() < d2["distance"].GetInt());
-    }*/
     if (d1.distance == d2.distance) {
         if (d1.freq == d2.freq) {
             string word1 = d1.word;
@@ -89,81 +110,39 @@ bool compare(Document& d1, Document& d2) {
 }
 
 /**
-* print le document json sous la forme : "{word: _, freq: _, dist: _},"
-*
-* @param d est le Document(Json)
+ * print le document json sous la forme : "{word: _, freq: _, dist: _},"
+ *
+ * @param d est le Document(Json)
 */
-void printJson(Document& d) { //print json document:{word: _, freq: _, dist: _},
-    /*StringBuffer buffer;
-    Writer<StringBuffer> writer(buffer);
-    d.Accept(writer);
-    cout << ',' << buffer.GetString();*/
+void printJson(Document& d) {
     cout << ",{\"word\":\"" << d.word << "\",\"freq\":" << d.freq << ",\"distance\":" << d.distance << "}";
 }
 
 /**
-* crée et retourne un json {word: _, freq: _, dist: _} à partir du path, de la fréquence du noeud et de lsa distance
-*
-* @param path est la chaine de caractère formée de tous les caractères rencontrés lors de notre descente à partir du root
-*
-* @param tree est le patricia tree
-*
-* @param nb_error nombre de "difference" rencontré (erreur) -> distance
-*
-* @return le document au format json {word: _, freq: _, dist: _}
+ * crée et retourne un json {word: _, freq: _, dist: _} à partir du path, de la fréquence du noeud et de la distance
+ *
+ * @param path est la chaine de caractère formée de tous les caractères rencontrés lors de notre descente à partir du root
+ *
+ * @param buffer est le patricia tree
+ *
+ * @param nb_error nombre de "difference" rencontré (erreur) -> distance
+ *
+ * @return le document au format json {word: _, freq: _, dist: _}
 */
-/*Document createJson(string path, shared_ptr<struct TrieNode> tree, int nb_error) {
-    Document d;
-    Document::AllocatorType& alloc = d.GetAllocator();
-
-    d.SetObject();
-
-    Value textWord;
-    textWord.SetString(path.c_str(), alloc);
-    Value textFreq;
-    textFreq.SetInt(tree->freq);
-    Value textDist;
-    textDist.SetInt(nb_error);
-    
-    d.AddMember("word", textWord, alloc);
-    d.AddMember("freq", textFreq, alloc);
-    d.AddMember("distance", textDist, alloc);
-
-    return d;
-}*/
-
 Document createJson(string path, char* buffer, int nb_error) {
-    /*Document d;
-    Document::AllocatorType& alloc = d.GetAllocator();
-
-    d.SetObject();
-    
-    int freq = *getFreq(buffer);
-    
-    Value textWord;
-    textWord.SetString(path.c_str(), alloc);
-    Value textFreq;
-    textFreq.SetInt(freq);
-    Value textDist;
-    textDist.SetInt(nb_error);
-    
-    d.AddMember("word", textWord, alloc);
-    d.AddMember("freq", textFreq, alloc);
-    d.AddMember("distance", textDist, alloc);*/
-    
     struct Document d = {path.c_str(), *getFreq(buffer), nb_error};
 
     return d;
 }
 
 /**
-* initialise et retourne la matrice des distances
-*
-* @param length_word est la taille du mot donné en entrée
-*
-* @param length_path est la taille de la chaine de caractère formée de tous les caractères rencontrés lors de notre descente à partir du root
-*
-* @return retourne la matrice des distances entre le mot word et le mot path
+ * initialise et retourne la matrice des distances
+ *
+ * @param length_word est la taille du mot donné en entrée
+ *
+ * @param length_path est la taille de la chaine de caractère formée de tous les caractères rencontrés lors de notre descente à partir du root
+ *
+ * @return retourne la matrice des distances entre le mot word et le mot path
 */
 vector<vector<size_t>> initErrorsMatrix(size_t length_word, size_t length_path) {
     vector<vector<size_t>> nb_errors(length_word + 1, vector<size_t>(length_path + 1));
@@ -189,13 +168,13 @@ vector<vector<size_t>> initErrorsMatrix(size_t length_word, size_t length_path) 
 }
 
 /**
-* calcule et retourne la distance entre le mot "word" et le mot "path" à l'aide d'une matrice
-*
-* @param word est le mot donné en entrée
-*
-* @param path est la chaine de caractère formée de tous les caractères rencontrés lors de notre descente à partir du root
-*
-* @return retourne la distance entre le mot word et le mot path
+ * calcule et retourne la distance entre le mot "word" et le mot "path" à l'aide d'une matrice
+ *
+ * @param word est le mot donné en entrée
+ *
+ * @param path est la chaine de caractère formée de tous les caractères rencontrés lors de notre descente à partir du root
+ *
+ * @return retourne la distance entre le mot word et le mot path
 */
 size_t getDistance(string word, string path) {
     size_t length_word = word.length();
@@ -222,17 +201,17 @@ size_t getDistance(string word, string path) {
 }
 
 /**
-* Parcourt l'arbre en prefix et ajoute à la liste words le document Json des mots d'une distance inférieure ou égale à "dist" du mot "word"
-*
-* @param path est la chaine de caractère formée de tous les caractères rencontrés lors de notre descente à partir du root
-*
-* @param word est le mot donné en entrée
-*
-* @param tree est le patricia tree
-*
-* @param dist est la distance donné en entrée
-*
-* @param words est la liste des documents(Json) ajouté au cours du parcourt de l'arbre
+ * Parcourt l'arbre en prefix et ajoute à la liste words le document Json des mots d'une distance inférieure ou égale à "dist" du mot "word"
+ *
+ * @param path est la chaine de caractère formée de tous les caractères rencontrés lors de notre descente à partir du root
+ *
+ * @param word est le mot donné en entrée
+ *
+ * @param tree est le patricia tree
+ *
+ * @param dist est la distance donné en entrée
+ *
+ * @param words est la liste des documents(Json) ajouté au cours du parcourt de l'arbre
 */
 void browse(string path, string word, char* root, char* tree, size_t dist, list<Document>& words) {
     int size = getSize(tree);
@@ -263,11 +242,11 @@ void browse(string path, string word, char* root, char* tree, size_t dist, list<
 }
 
 /**
-* lit le fichier binaire et le retransforme en la structure tree TrieNode en prefix
-*
-* @param inFile FileStream est le fichier binaire
-*
-* @return root est le patricia tree
+ * lit le fichier binaire et le retransforme en la structure tree TrieNode en prefix
+ *
+ * @param inFile FileStream est le fichier binaire
+ *
+ * @return root est le patricia tree
 */
 shared_ptr<struct TrieNode> read_from_file(ifstream& inFile) {
     int size;
@@ -296,11 +275,11 @@ char* read_file(int fd, long unsigned size_check) {
 }
 
 /**
-*  menu où l'on entre les instructions "approx"
-*
-* @param root Patricia Tree
-*
-* @return 0 si pas d'erreur 1 sinon
+ *  menu où l'on entre les instructions "approx"
+ *
+ * @param root Patricia Tree
+ *
+ * @return 0 si pas d'erreur 1 sinon
 */
 int my_menu(char* root){ // menu où on entre les instructions "approx"
     while (1) {
@@ -338,10 +317,6 @@ int my_menu(char* root){ // menu où on entre les instructions "approx"
                         if (it != begin) {
                             printJson(item);
                         } else {
-                            /*StringBuffer buffer;
-                            Writer<StringBuffer> writer(buffer);
-                            item.Accept(writer);
-                            cout << buffer.GetString();*/
                             cout << "{\"word\":\"" << item.word << "\",\"freq\":" << item.freq << ",\"distance\":" << item.distance << "}";
                         }
                     }
