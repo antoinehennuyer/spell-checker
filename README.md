@@ -1,4 +1,4 @@
-Compilation:
+#Compilation:
 
 Afin de compiler correctement notre programme, il suffit de faire: "sh build.sh" ce qui va créer deux binaires différents: TextMiningCompiler et TextMiningApp
 Ensuite afin de créer le dictionnaire qui va être utiliser il faut faire: "./TextMiningCompiler words.txt dict.bin"
