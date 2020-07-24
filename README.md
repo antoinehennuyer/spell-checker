@@ -1,3 +1,8 @@
+Version:
+==========
+
+C++ 9.3.0
+
 # Compilation:
 
 Afin de compiler correctement notre programme, il suffit de faire: "sh build.sh" ce qui va créer deux binaires différents: TextMiningCompiler et TextMiningApp
