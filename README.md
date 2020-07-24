@@ -1,13 +1,23 @@
+Compilation:
+
+Afin de compiler correctement notre programme, il suffit de faire: "sh build.sh" ce qui va créer deux binaires différents: TextMiningCompiler et TextMiningApp
+Ensuite afin de créer le dictionnaire qui va être utiliser il faut faire: "./TextMiningCompiler words.txt dict.bin"
+Enfin pour utiliser le dictionnaire créé il faut faire: "./TextMiningApp dict.bin"
+Vous allez pouvoir rechercher les mots désirés grâce à cette commande dans le terminal généré: ">approx <distance> <mot>"
+distance: est un nombre qui désigne la distance de Damerau-Levenshtein pour notre recherche dans la dictionnaire.
+
 Questions:
 ==========
 
 A VOIR 1 / 4 / 5 / 6 
 
  1.     Décrivez les choix de design de votre programme
- Projet en C++
- Deux fichiers exécutables: TextMiningCompiler et TextMiningApp
- On utilise la lib rapidjson pour gérer la création de nos documents Json
- 
+ Ce projet a été réalisé dans le langage C++.
+ Nous produisons deux executables différents, l'un se nomme TextMiningCompiler et le second TextMiningApp.
+ Nous avons un dossier "src" qui contient toute la partie code des deux binaires (TextMiningApp et TextMiningCompiler
+)
+Afin de faciliter l'utilisation de ce programme nous avons créé un script afin de compiler ce dernier (build.sh).
+
  Etapes:
     Compiler:
     1) on sort notre words.txt
@@ -29,14 +39,14 @@ Nous avons réalisé une testSuite en python où l'on renseigne une distance et 
  La correction par distance peut ne pas fonctionner lorsque les mots sont éloignés grammaticalement mais proche phonétiquement.
  
  4.     Quelle est la structure de données que vous avez implémentée dans votre projet, pourquoi ?
-Nous avons décider d'utiliser un PatriciaTrie, car c'est un moyen d'utiliser moins de RAM qu'un trie normal. 
-Cela nous as permit d'améliorer considérablement les performances de notre programme.
+En premier lieu, nous avions décidé d'utiliser un simple Trie afin de créer notre programme. Mais l'inconvénient c'est qu'il prend beaucoup de place en RAM. En effet, pour chaque caractére, il utilise un noeud. Pour des raisons de performances, nous avons finalement utiliser un Patricia Trie, c'est une implémentation qui permet d'optimiser certaines branches de l'arbre, c'est à dire stocker plus d'un caractéres par noeuds.
 
  5.     Proposez un réglage automatique de la distance pour un programme qui prend juste une chaîne de caractères en entrée, donner le processus d’évaluation ainsi que les résultats
  
  6.     Comment comptez vous améliorer les performances de votre programme
 testesuite devient plus lente comme elle est écrite en python.
 implémenter bloomfilter
+Afin d'améliorer les performances de notre programme, nous pouvons changer notre façon d'écrire notre arbre dans un fichier, qui est plutôt lente dû à l'appel successif d'appel de fonction  write. De plus nous pouvons réaliser un bloomfilter afin d'améliorer les performances de notre programme.
 
  7.     Que manque-t-il à votre correcteur orthographique pour qu’il soit à l’état de l’art ?
 
